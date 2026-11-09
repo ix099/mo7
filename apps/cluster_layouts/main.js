@@ -58,11 +58,19 @@ mgu.run({
         const D = startData(ctx, { shown: showing });
         const car = D.car;
         const data = () => D.data();
+        /* The KOMBI's own sport readouts (a gear box and a power box) go up in the middle of the panel, over any
+         * app, while the drive mode is a SPORT one (or always, on an M display) - photos of a G05 xDrive40i in
+         * SPORT INDIVIDUAL show all three boxes on the layout. With Boxes 'auto' (the default) the layouts keep
+         * their readings out of that band exactly while such a mode is on, and take the whole panel otherwise. */
+        const sportNow = () => { const d = data(); return /SPORT|RACE/i.test(String(d.driveMode || '')) || d.mode === 'S' || d.mode === 'M'; };
         const options = () => ({
             speedUnit: settings.get('speedUnit'), tempUnit: settings.get('tempUnit'), centre: settings.get('centre'),
             redline: Number(settings.get('redline')) || 7000, rpmMax: Number(settings.get('rpmMax')) || 8000,
             boxClear: settings.get('boxClear') === 'on',
-            cluster: settings.get('cluster') === 'm' ? 'm' : 'standard',   // an M car's KOMBI: its two boxes in the middle (layouts.js)
+            // the KOMBI's boxes in the middle (layouts.js): always there ('m'), never ('standard'), or with the
+            // drive mode ('auto': layout_common.mCar reads boxesNow)
+            cluster: settings.get('cluster') === 'm' ? 'm' : settings.get('cluster') === 'standard' ? 'standard' : 'auto',
+            boxesNow: sportNow(),
             boxBezel: settings.get('boxBezel') === 'on',   // (off: the box sits on the plain background)
             alarmRpm: settings.get('revAlarm') === 'off' ? 0 : Number(settings.get('alarmRpm')) || 6000,   // the rev alarm (alarm.js)
             vehicle: D.vehicle().vehicle,      // set, or found from the car (Auto)
@@ -99,7 +107,8 @@ mgu.run({
             onFresh: D.onFresh,
         });
         let cluster = start();
-        let lastVehicle = null, lastModeGear = null;
+        let lastVehicle = null, lastModeGear = null, lastBoxes = null;
+        const { mCar } = require('./layout_common');
         // the engine-unit readings the layout shows, read fast while it shows
         setInterval(() => {
             if (showing()) D.want((layout.needs || []).concat(require('./layout_common').focus.needs(options())));
@@ -107,6 +116,12 @@ mgu.run({
             // the vehicle found (Settings > Vehicle: Auto): the layout redrawn for it once known
             const v = D.vehicle().vehicle;
             if (v !== lastVehicle) { if (lastVehicle) cluster.rebuild(); lastVehicle = v; }
+            // Boxes 'auto': the KOMBI's sport boxes came or went with the drive mode - the layout moved round them
+            const bx = mCar(options());
+            if (bx !== lastBoxes) {
+                if (lastBoxes !== null) { cluster.rebuild(); log.info('boxes in the middle ' + (bx ? 'expected (sport mode): readings moved round them' : 'gone: the whole panel used')); }
+                lastBoxes = bx;
+            }
             // drive mode and gear changes in the log (timestamped), beside the cluster's target changes: what the
             // KOMBI does to the layout on a mode change (the stock cluster back for a few seconds) shows in one log
             const dn = data(), mg = (dn.driveMode || '-') + ' / ' + (dn.gear == null ? '-' : dn.gear);

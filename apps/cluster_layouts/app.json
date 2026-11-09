@@ -2,7 +2,7 @@
   "id": "cluster_layouts",
   "title": "Cluster Layouts",
   "description": "Your own layout on the whole instrument cluster (round dials, gear, temperatures), drawn by the cluster itself",
-  "version": "0.15.0",
+  "version": "0.16.0",
   "startType": "autostart",
   "vendor": "custom",
   "loggingId": "OA9L",
@@ -180,7 +180,7 @@
       "key": "layout",
       "label": "Layout",
       "type": "choice",
-      "default": "mo7",
+      "default": "toro",
       "options": [
         [
           "analog_sport",
@@ -211,16 +211,8 @@
           "Track"
         ],
         [
-          "apex",
-          "Apex (supercar)"
-        ],
-        [
-          "kenawy",
-          "Kenawy (digital luxury, animated)"
-        ],
-        [
-          "mo7",
-          "Mo7 (motorsport, gear animation, shift alert)"
+          "toro",
+          "Toro (hexagon tach, supercar)"
         ]
       ]
     },
@@ -266,17 +258,21 @@
     },
     {
       "key": "cluster",
-      "label": "Boxes in the middle of the cluster",
+      "label": "Boxes in the middle of the cluster (the KOMBI draws them over every app)",
       "type": "choice",
-      "default": "m",
+      "default": "auto",
       "options": [
         [
+          "auto",
+          "Auto: readings moved round them while the drive mode is SPORT (the KOMBI shows them then)"
+        ],
+        [
           "m",
-          "Yes: two dark boxes in the middle (as on this X5 40i), readings moved round them"
+          "Always (M display: the boxes are always up)"
         ],
         [
           "standard",
-          "No: only the gear box right of centre"
+          "Never: only the gear box right of centre"
         ]
       ]
     },
@@ -411,7 +407,7 @@
     },
     {
       "key": "welcome",
-      "label": "Welcome when the cluster comes up (Apex, Kenawy)",
+      "label": "Welcome when the cluster comes up (Toro)",
       "type": "choice",
       "default": "on",
       "options": [
@@ -427,7 +423,7 @@
     },
     {
       "key": "motion",
-      "label": "Animations (Kenawy's light blade, glints and glow)",
+      "label": "Animations (Toro's glow and glints)",
       "type": "choice",
       "default": "on",
       "options": [
@@ -443,7 +439,7 @@
     },
     {
       "key": "revAlarm",
-      "label": "Rev alarm: red light pulsing round the edges (Apex, Kenawy, Mo7)",
+      "label": "Rev alarm: red light pulsing round the edges (Toro)",
       "type": "choice",
       "default": "on",
       "options": [

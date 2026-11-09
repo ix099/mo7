@@ -1140,4 +1140,159 @@ void main() {
     gl_FragColor = vec4(mix(u_color, u_core, line * 0.6), clamp(k * (glow * 0.7 + line * 0.85) * ends, 0.0, 1.0));
 }`;
 
-module.exports = { HIGHP, COMMON, GLYPH, FLAT_FS, PANEL_FS, DIAL_FS, BAND_FS, TEXT_FS, BG_FS, ICON_FS, SPARK_FS, CAR_FS, LEDS_FS, FLAG_FS, EAGLE_FS, FIREWORKS_FS, BLADE_FS, GLINT_FS, AURA_FS, VEIL_FS, EMBLEM_FS, REVEAL_FS, SEG_FS, GEARFX_FS, ALARM_FS };
+/**
+ * Toro (layout_toro.js): a gauge along a flat-top hexagon's ring - the tach. The track, the fill from the
+ * start to u_value (0..1) in a gradient, red from u_red, a glowing tip, major marks and numerals INSIDE the
+ * ring (the hexagon's own metric places them on its edges). Transparent elsewhere, and a pixel far from the
+ * ring exits at once.
+ *   u_geo     the hexagon's centre (px in this layer), R (the ring's middle, in the hex metric), thickness px
+ *   u_span    start and end angle (degrees from 12 o'clock, clockwise), segments (0 solid), gap (of a segment)
+ *   u_marks   major marks (0 none), numeral step, numeral height px (0 none), numeral offset from the ring
+ *             (negative: inside)
+ */
+const HEXBAND_FS = `#version 100
+${HIGHP}${COMMON}${GLYPH}
+uniform vec2 u_size;
+uniform vec4 u_geo;
+uniform vec4 u_span;
+uniform vec4 u_marks;
+uniform float u_value;
+uniform float u_red;
+uniform float u_digit_adv;
+uniform vec3 u_track;
+uniform vec3 u_fill0;
+uniform vec3 u_fill1;
+uniform vec3 u_redc;
+uniform vec3 u_tip;
+uniform vec3 u_tick;
+uniform vec3 u_num;
+varying vec2 v_uv;
+/* the flat-top hexagon's metric: hexd(p) = R on the hexagon whose flat edges are top and bottom */
+float hexd(vec2 q) { q = abs(q); return max(q.x * 0.8660254 + q.y * 0.5, q.y); }
+void main() {
+    vec2 p = v_uv * u_size, d = p - u_geo.xy;
+    float R = u_geo.z, T = u_geo.w;
+    float hh = hexd(d);
+    /* far from the ring (its glow, marks and numerals): nothing */
+    if (abs(hh - R) > T * 1.8 + abs(u_marks.w) + u_marks.z + 6.0) { gl_FragColor = vec4(0.0); return; }
+    float ang = atan(d.x, -d.y) / DEG;
+    float a0 = u_span.x, a1 = u_span.y, sweep = a1 - a0;
+    float da = ang - a0;
+    if (sweep > 0.0 && da < -180.0) da += 360.0;
+    if (sweep > 0.0 && da > 180.0 + sweep) da -= 360.0;
+    float t = da / sweep;
+    float lenPx = abs(sweep) * DEG * R;
+    vec4 acc = vec4(0.0);
+    float inSpan = span(t * lenPx, 0.0, lenPx);
+    float inBand = span(hh, R - T * 0.5, R + T * 0.5) * inSpan;
+    {
+        /* the glow round the lit part, outside the ring */
+        float outside = abs(hh - R) - T * 0.5;
+        vec3 hc = t >= u_red ? u_redc : mix(u_fill0, u_fill1, clamp(t / max(u_value, 0.001), 0.0, 1.0));
+        float halo = outside > 0.0 ? exp(-outside * outside / (T * T * 0.35)) : 0.0;
+        acc = over(acc, hc, halo * 0.3 * clamp((u_value - t) * lenPx + 0.5, 0.0, 1.0) * inSpan * (u_value > 0.003 ? 1.0 : 0.0));
+    }
+    if (inBand > 0.0) {
+        float seg = 1.0;
+        if (u_span.z > 0.0) { float sl = lenPx / u_span.z, sx = fract(t * u_span.z) * sl, g = sl * u_span.w * 0.5; seg = span(sx, g, sl - g); }
+        float lit = clamp((u_value - t) * lenPx + 0.5, 0.0, 1.0) * (u_value > 0.003 ? 1.0 : 0.0);
+        vec3 fc = mix(u_fill0, u_fill1, clamp(t / max(u_value, 0.001), 0.0, 1.0));
+        if (t >= u_red) fc = u_redc;
+        float across = 1.0 - abs(hh - R) / (T * 0.5);
+        vec3 c = mix(u_track * (t >= u_red ? 1.6 : 1.0), fc * (0.75 + 0.35 * across), lit);
+        acc = over(acc, c, inBand * seg);
+    }
+    /* the tip's glow, on the hexagon itself */
+    {
+        float ta = (a0 + sweep * clamp(u_value, 0.0, 1.0)) * DEG;
+        vec2 dir = vec2(sin(ta), -cos(ta));
+        vec2 tp = u_geo.xy + dir * (R / hexd(dir));
+        float dist = length(p - tp);
+        acc = over(acc, u_tip, exp(-dist * dist / (T * T * 0.9)) * 0.85 * (u_value > 0.003 ? 1.0 : 0.0));
+    }
+    /* major marks and numerals inside the ring */
+    if (u_marks.x > 0.0) {
+        float m = floor(clamp(t, 0.0, 1.0) * u_marks.x + 0.5);
+        float tm = m / u_marks.x;
+        float off = abs(t - tm) * lenPx;
+        float r0 = R - T * 0.5 - 12.0, r1 = R - T * 0.5 - 4.0;
+        if (u_marks.w > 0.0) { r0 = R + T * 0.5 + 4.0; r1 = R + T * 0.5 + 12.0; }
+        acc = over(acc, tm >= u_red ? u_redc : u_tick, clamp(1.6 - off + 0.5, 0.0, 1.0) * span(hh, r0, r1) * inSpan);
+        if (u_marks.z > 0.0) {
+            float vk = m * u_marks.y;
+            float am = (a0 + sweep * tm) * DEG;
+            vec2 dm = vec2(sin(am), -cos(am));
+            vec2 pc = u_geo.xy + dm * ((R + u_marks.w) / hexd(dm));
+            float h = u_marks.z, adv = u_digit_adv;
+            float n = vk >= 9.5 ? 2.0 : 1.0;
+            vec2 q = (p - pc) / h;
+            float x = q.x + n * adv * 0.5;
+            float i = floor(x / adv);
+            if (i >= 0.0 && i < n) {
+                float sd = sdf(digitOf(vk, i, n), vec2(x - (i + 0.5) * adv, q.y + 0.5));
+                acc = over(acc, tm >= u_red - 0.001 ? u_redc : u_num, smoothstep(0.5 - 2.0 / h, 0.5 + 2.0 / h, sd));
+            }
+        }
+    }
+    gl_FragColor = acc;
+}`;
+
+/**
+ * A thin hexagonal outline (the bezel round the tach, in the same flat-top metric), with a soft glow.
+ *   u_hex     centre x, y, R, line width px;  u_soft: the glow's reach px
+ */
+const HEXLINE_FS = `#version 100
+${HIGHP}
+uniform vec2 u_size;
+uniform vec4 u_hex;
+uniform float u_soft;
+uniform vec4 u_color;
+uniform vec3 u_glow;
+varying vec2 v_uv;
+float hexd(vec2 q) { q = abs(q); return max(q.x * 0.8660254 + q.y * 0.5, q.y); }
+void main() {
+    vec2 d = v_uv * u_size - u_hex.xy;
+    float e = abs(hexd(d) - u_hex.z);
+    float line = clamp(u_hex.w * 0.5 - e + 0.5, 0.0, 1.0) * u_color.a;
+    float g = e / max(u_soft, 0.5);
+    float glow = exp(-g * g) * 0.4;
+    float a = clamp(line + glow, 0.0, 1.0);
+    gl_FragColor = vec4(a > 0.0 ? (u_color.rgb * line + u_glow * glow * (1.0 - line)) / a : u_color.rgb, a);
+}`;
+
+/**
+ * Toro's background: a dark hexagonal weave (carbon), continuous across layers (u_org: this layer's place on
+ * the panel, so the pattern lines up), a faint tint of the accent towards the top and a vignette at the panel's
+ * edges. Opaque: it is the background.
+ *   u_cell    cell size px, the weave's strength 0..1, vignette 0..1, tint 0..1
+ *   u_org     this layer's x, y on the panel
+ */
+const HEXPAT_FS = `#version 100
+${HIGHP}
+uniform vec2 u_size;
+uniform vec4 u_cell;
+uniform vec2 u_org;
+uniform vec3 u_base;
+uniform vec3 u_line;
+uniform vec3 u_accent;
+varying vec2 v_uv;
+float hexp(vec2 q) { q = abs(q); return max(q.y * 0.8660254 + q.x * 0.5, q.x); }
+void main() {
+    vec2 w = u_org + v_uv * u_size;
+    vec2 p = w / u_cell.x;
+    vec2 r = vec2(1.0, 1.7320508);
+    vec2 a = mod(p, r) - r * 0.5, b = mod(p - r * 0.5, r) - r * 0.5;
+    vec2 g = dot(a, a) < dot(b, b) ? a : b;
+    float dpx = (0.5 - hexp(g)) * u_cell.x;                       /* px to the cell's edge */
+    float line = clamp(1.4 - dpx, 0.0, 1.0) * u_cell.y;
+    /* a second, finer weave inside the cells */
+    vec2 g2 = dot(a, a) < dot(b, b) ? a : b;
+    float sheen = 0.5 + 0.5 * sin((w.x + w.y * 0.6) * 0.02);
+    vec3 col = u_base + u_line * line * (0.55 + 0.45 * sheen);
+    col += u_accent * u_cell.w * (1.0 - clamp(w.y / 300.0, 0.0, 1.0)) * 0.05;
+    vec2 v = (w / vec2(1920.0, 720.0) - 0.5) * vec2(1.0, 1.35);
+    col *= 1.0 - u_cell.z * 0.5 * smoothstep(0.3, 0.75, length(v));
+    gl_FragColor = vec4(col, 1.0);
+}`;
+
+module.exports = { HIGHP, COMMON, GLYPH, FLAT_FS, PANEL_FS, DIAL_FS, BAND_FS, TEXT_FS, BG_FS, ICON_FS, SPARK_FS, CAR_FS, LEDS_FS, FLAG_FS, EAGLE_FS, FIREWORKS_FS, BLADE_FS, GLINT_FS, AURA_FS, VEIL_FS, EMBLEM_FS, REVEAL_FS, SEG_FS, GEARFX_FS, ALARM_FS, HEXBAND_FS, HEXLINE_FS, HEXPAT_FS };

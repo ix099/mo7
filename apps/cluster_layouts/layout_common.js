@@ -86,8 +86,10 @@ const EDRIVE_HOLE = { x: 1770, y: 170, w: 150, h: 95 };
  */
 const M_BOXES = [{ x: 793, y: 289, w: 246, h: 92 }, { x: 1223, y: 328, w: 171, h: 78 }];
 const M_HOLES = [{ x: 778, y: 274, w: 276, h: 122 }, { x: 1208, y: 313, w: 207, h: 113 }];
-/** True for an M car (Settings > Cluster). */
-const mCar = (o) => !!o && o.cluster === 'm';
+/** True when the KOMBI's middle boxes are to be kept clear: Settings > Boxes 'm' (always), or 'auto' (the
+ * default) while a SPORT drive mode is on (main.js boxesNow: the KOMBI shows its sport readouts then, on a G05
+ * xDrive40i as on an M car); never with 'standard'. */
+const mCar = (o) => !!o && (o.cluster === 'm' || (o.cluster !== 'standard' && !!o.boxesNow));
 /** The KOMBI's dark boxes a layout keeps its readings out of, for this car: the gear box, and an M car's two. */
 const holes = (o) => [GEARBOX_HOLE, EDRIVE_HOLE].concat(mCar(o) ? M_HOLES : []);
 /* the stock warning lights and the fallback gear letter along the bottom middle */

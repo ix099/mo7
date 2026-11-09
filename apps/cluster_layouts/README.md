@@ -3,8 +3,8 @@
 *Part of [iDrive 7 cluster apps](../../README.md), with Cluster Info and [Cluster Centre](../cluster_centre/README.md).*
 
 Custom layouts for the whole instrument cluster of a BMW with iDrive 7 (MGU), **drawn by the cluster
-itself**. Ten original layouts (Analog sport, Digital round, Modern wide, Digital dash, Freedom, Retro,
-Track, Apex, Kenawy and Mo7), each in comfort, sport and efficient colours (following the selector's S / M
+itself**. Eight original layouts (Analog sport, Digital round, Modern wide, Digital dash, Freedom, Retro,
+Track and Toro), each in comfort, sport and efficient colours (following the selector's S / M
 programme, or chosen), each with three centres: the **readings**, the **map** (Waze or the stock map shows in
 the middle), or the **stock** centre content.
 
@@ -105,86 +105,69 @@ the drive) and the drive's peak power (or boost), and the ranges and charge righ
 |---|
 | ![](../../docs/track_sport.png) |
 
-### Apex (supercar)
+### Toro (the default here)
 
-A big rev counter in the middle, analog and digital together: an analog face and needle, a segmented LED ring
-round it that turns red at the red zone, and a dark centre disc the needle comes out from with the **digital speed
-large in it** and the gear under it. Long arcs frame the cluster (road speed on the left, power on the right),
-small analog oil and coolant dials with their digits, the drive mode in a lit badge. With the map in the centre
-the map window gets a lit frame and the rev counter moves left of it. With Settings > Cluster: M car everything
-moves out of the band of the M KOMBI's boxes, so they vanish into the black.
+A supercar cockpit in the spirit of the newest Italian V12 clusters, an original design: a dark hexagonal
+carbon weave dresses the whole panel (`HEXPAT_FS`, continuous across its layers), a framed edge with travelling
+glints, and a big flat-top **hexagon** in the middle whose ring is the tach (`HEXBAND_FS`) - segmented, amber /
+red / green with the look, the red zone at its end, the numerals inside on the hexagon's own edges - with the
+gear huge in its centre and the drive mode in a lit pill under it. On a gear change the new gear slides in with
+a streak while the old one slides out and fades: the cluster plays it from one message (`engine.js` kick,
+`GEARFX_FS`). The digital speed stands large with wide boost / power and fuel bars under it; temperatures,
+boost and torque (petrol / diesel) or charge and power (plug-in hybrid), outside and the xDrive split sit in
+tiles with slim bars.
 
-![Apex](../../docs/apex_sport.png)
+![Toro](../../docs/toro.png)
 
-| Map in the centre | M car |
+| The KOMBI's boxes up (SPORT, a gear change) | Map in the centre |
 |---|---|
-| ![](../../docs/apex_map.png) | ![](../../docs/apex_mcar.png) |
+| ![](../../docs/toro_boxes.png) | ![](../../docs/toro_map.png) |
 
-### Kenawy (digital luxury, animated)
+### The KOMBI's boxes, and how Toro hides them
 
-All digital and alive on the cluster's own clock (`shaders.js`: `BLADE_FS`, `GLINT_FS`, `AURA_FS`; nothing is
-sent to animate them): a light blade across the top for the engine speed (a sheen running along it, a spark at
-its tip, pulsing red at the shift point), the speed huge in the middle over a slowly breathing glow, hairlines
-with travelling glints, the gear in its own chip, the drive mode in a lit badge. Champagne gold (comfort),
-crimson (sport), jade (efficient). With the map in the centre the map is framed by glinting hairlines and the
-blade runs under it.
+The KOMBI draws its own widgets **above** every app's panel: its gear bracket right of centre always, and - on
+this G05 xDrive40i, not only on M cars - its two sport readouts in the middle **while the drive mode is SPORT /
+SPORT INDIVIDUAL** (photos of the car confirm all three). No app can draw over them; they can only be made to
+vanish into pure black, so Toro cuts its carbon weave round every box and lays exact black under it. With
+**Boxes: Auto** (the default) the layouts also move their readings out of the middle band exactly while a SPORT
+mode is on (the layout is redrawn when the mode changes, logged): the band becomes a framed black blade across
+the design, the hexagon moves left of it and the speed under it. 'Always' and 'Never' are manual overrides.
 
-![Kenawy](../../docs/kenawy.png)
+Truly removing the boxes is the KOMBI's business, not an app's: see "The rev alarm" below for what stays ours,
+and the repo's issue notes - the `cluster-render` service already hides the stock CarPlay maneuver box this way
+(its **guide hold**: an empty 16x16 scene held in the box's slot, 0x105 / 0x103), so if the sport readouts are
+slot-mapped too (the renderer's slot report on **Signals page 2** says, photographed in COMFORT and in SPORT),
+the same hold extended to the `panel` target removes them for real.
 
-| Sport colours | Map in the centre |
-|---|---|
-| ![](../../docs/kenawy_sport.png) | ![](../../docs/kenawy_map.png) |
-
-### The welcome (Apex and Kenawy)
+### The welcome (Toro)
 
 When the cluster comes up with the car standing (it waits until the KOMBI shows it, up to 2.5 s, so its own
-start-up animation is not played over; a settings change or the car found does not cut it): a black veil, the emblem drawn in (its ring sweeping round,
-the letters, the quartered centre spinning into place, a glint) and WELCOME with the owner's name revealed by an
-edge of light; then it fades and the needles sweep (`intro.js`, `engine.js`; one number the cluster animates
-itself). Once, and again only after the car was parked for 10 minutes; never while moving (it ends at once
-from 6 km/h). Settings > Welcome turns it off; the name is `NAME` in `intro.js`.
+start-up animation is not played over; a settings change or the car found does not cut it): a black veil, the
+emblem drawn in (its ring sweeping round, the letters, the quartered centre spinning into place, a glint) and
+WELCOME with the owner's name revealed by an edge of light; then it fades and the needles sweep (`intro.js`,
+`engine.js`; one number the cluster animates itself). Once, and again only after the car was parked for 10
+minutes; never while moving (it ends at once from 6 km/h). Settings > Welcome turns it off; the name is `NAME`
+in `intro.js`.
 
-| Welcome | M car |
-|---|---|
-| ![](../../docs/welcome.png) | ![](../../docs/welcome_mcar.png) |
+![The welcome](../../docs/welcome.png)
 
-### Mo7 (motorsport, the default here)
-
-A trapezoid frame across the top holds the engine speed as a long segmented bar, its numerals over it and the red
-zone at its end; the speed large on the left; under the middle the gear big between two chevrons with the drive
-mode under it. On a gear change the new gear slides in with a streak and a flash while the old one slides out
-and fades: the cluster plays it from one message (`engine.js` kick, `GEARFX_FS`). The temperatures with their
-bars on the left, the boost and torque (petrol, diesel) or the charge and power (plug-in hybrid) on the right,
-the fuel range, outside temperature and time along the bottom. **It keeps the whole band in the middle (x
-770-1670, y 262-458) black on every car**, so the KOMBI's dark boxes there never sit on a reading. Light on the
-cluster: nothing on the renderer's clock, every stroke its own small layer (`SEG_FS`).
-
-![Mo7](../../docs/mo7.png)
-
-| A gear change (3 -> 4) | The rev alarm (SHIFT) | Map in the centre |
-|---|---|---|
-| ![](../../docs/mo7_shift.png) | ![](../../docs/mo7_alarm.png) | ![](../../docs/mo7_map.png) |
-
-### The rev alarm (Apex, Kenawy, Mo7)
+### The rev alarm (Toro)
 
 From Settings > Rev alarm from (6000 rpm by default) red light pulses round the cluster's edges like an alarm,
 until the engine speed is 150 rpm below it again (`alarm.js`, `ALARM_FS`). The cluster loops the pulse itself
-while it is on (engine.js hold: one message to start it, one to stop it); off, its strips draw nothing. They keep
-to the glass's edges, off the KOMBI's boxes, the cowl, the corners and the warning lights. Mo7 also turns its
-frame, bar and chevrons red and shows SHIFT under the gear. Settings > Rev alarm turns it off.
+while it is on (engine.js hold: one message to start it, one to stop it); off, its strips draw nothing. Toro
+also turns its hexagon's ring, bezel and fill red and its mode pill reads SHIFT.
 
-| Kenawy | Apex |
-|---|---|
-| ![](../../docs/alarm_kenawy.png) | ![](../../docs/alarm_apex.png) |
+![The rev alarm](../../docs/toro_alarm.png)
 
 ### This fork's defaults: an X5 xDrive40i
 
-Mo7, km/h, °C, 24-hour clock, Eastern Europe time zone, Vehicle petrol (boost, torque, timing instead of the
-battery), an 83 L tank, and **Boxes in the middle of the cluster: yes** (Settings > Cluster): on this car the
-KOMBI leaves two dark boxes in the middle of the panel too, not only on M cars, so Apex and Kenawy move their
-readings round them. Settings > Animations off stills Kenawy's blade, glints and glow (lighter on the cluster).
-The shaders skip the empty parts of the arcs and the unused glyph slots of every text (the same look, less work
-for the KOMBI's GPU, every layout).
+Toro, km/h, °C, 24-hour clock, Eastern Europe time zone, Vehicle petrol (boost, torque, timing instead of the
+battery), an 83 L tank, **Boxes: Auto**. Settings > Animations off stills the glints and the breathing glow
+(lighter on the cluster). The shaders skip the empty parts of the arcs and the unused glyph slots of every text
+(the same look, less work for the KOMBI's GPU, every layout). The Apex, Kenawy and Mo7 layouts that lived here
+up to 0.15.x were removed on the owner's request (kept in his local backup).
+
 
 *(Drawn by `tools/preview.js` from the same shaders the cluster runs; the map is a stand-in for the real one.)*
 

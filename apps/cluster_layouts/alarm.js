@@ -1,6 +1,6 @@
 'use strict';
 /**
- * alarm.js - the rev alarm (Apex, Kenawy, Mo7): from Settings > Rev alarm (6000 rpm by default) red light pulses
+ * alarm.js - the rev alarm (Toro): from Settings > Rev alarm (6000 rpm by default) red light pulses
  * round the cluster's edges like an alarm, until the engine speed is 150 rpm below it again. The cluster plays
  * the pulse itself (engine.js hold: one looping animation while it is on, stopped when it goes); off, its six
  * strips draw nothing and cost next to nothing. They keep to the glass's edges: off the KOMBI's boxes, the

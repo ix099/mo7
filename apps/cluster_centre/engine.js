@@ -50,8 +50,8 @@ const TAU_MS = 30;           // a needle's easing towards its reading: smooth be
 const MIN_GAP_MS = 4;        // a reading's update at most this soon after the last
 const EPS = 0.0015;          // a value moving less than this (of its max) is not sent
 const SWEEP_MS = 700;        // up, then as long back down
-const FS = { flat: SH.FLAT_FS, panel: SH.PANEL_FS, dial: SH.DIAL_FS, band: SH.BAND_FS, text: SH.TEXT_FS, bg: SH.BG_FS, icon: SH.ICON_FS, spark: SH.SPARK_FS, car: SH.CAR_FS, leds: SH.LEDS_FS, flag: SH.FLAG_FS, eagles: SH.EAGLE_FS, fireworks: SH.FIREWORKS_FS, blade: SH.BLADE_FS, glint: SH.GLINT_FS, aura: SH.AURA_FS, veil: SH.VEIL_FS, emblem: SH.EMBLEM_FS, reveal: SH.REVEAL_FS, seg: SH.SEG_FS, gearfx: SH.GEARFX_FS, alarm: SH.ALARM_FS };
-const Z = { flag: -210, bg: -200, fireworks: -190, eagles: -180, aura: -150, flat: -100, glint: -40, blade: 0, panel: -50, spark: -20, band: 0, dial: 0, car: 0, leds: 0, text: 20, icon: 20, veil: 200, emblem: 210, reveal: 220, seg: -30, gearfx: 20, alarm: 30 };
+const FS = { flat: SH.FLAT_FS, panel: SH.PANEL_FS, dial: SH.DIAL_FS, band: SH.BAND_FS, text: SH.TEXT_FS, bg: SH.BG_FS, icon: SH.ICON_FS, spark: SH.SPARK_FS, car: SH.CAR_FS, leds: SH.LEDS_FS, flag: SH.FLAG_FS, eagles: SH.EAGLE_FS, fireworks: SH.FIREWORKS_FS, blade: SH.BLADE_FS, glint: SH.GLINT_FS, aura: SH.AURA_FS, veil: SH.VEIL_FS, emblem: SH.EMBLEM_FS, reveal: SH.REVEAL_FS, seg: SH.SEG_FS, gearfx: SH.GEARFX_FS, alarm: SH.ALARM_FS, hexband: SH.HEXBAND_FS, hexline: SH.HEXLINE_FS, hexpat: SH.HEXPAT_FS };
+const Z = { flag: -210, bg: -200, fireworks: -190, eagles: -180, aura: -150, flat: -100, glint: -40, blade: 0, panel: -50, spark: -20, band: 0, dial: 0, car: 0, leds: 0, text: 20, icon: 20, veil: 200, emblem: 210, reveal: 220, seg: -30, gearfx: 20, alarm: 30, hexband: 0, hexline: -10, hexpat: -195 };
 /* kinds that animate on the renderer's own clock (u_time): nothing is sent to move them */
 const TIMED = { car: true, leds: true, flag: true, eagles: true, fireworks: true, blade: true, glint: true, aura: true };
 /* the decorative ones: on the clock only with Settings > Animations on (opts.motion()); every frame a timed layer
@@ -176,7 +176,7 @@ function startCluster(opts) {
             if (!ref) { warnOnce('piece ' + s.key + ' refused here'); return; }
             const p = { ref, spec: s, colours: '', text: null, value: 0, sent: -1, anim: 0, dyn: '', histSent: -1 };
             if (s.kind !== 'flat') cr.uniform(ref, 'u_size', [s.w, s.h]);
-            if (s.kind === 'dial' || s.kind === 'band' || s.kind === 'text' || s.kind === 'blade' || s.kind === 'reveal' || s.kind === 'emblem' || s.kind === 'gearfx') {
+            if (s.kind === 'dial' || s.kind === 'band' || s.kind === 'text' || s.kind === 'blade' || s.kind === 'reveal' || s.kind === 'emblem' || s.kind === 'gearfx' || s.kind === 'hexband') {
                 cr.bind(ref, 'u_font', fontRef);
                 cr.uniform(ref, 'u_font_cells', fontCells());
                 cr.uniform(ref, 'u_digit_adv', [Math.round(font.digitAdvance(fam()) * 1000) / 1000]);
