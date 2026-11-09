@@ -189,7 +189,7 @@ function mLayout(o, tt) {
     return list;
 }
 
-module.exports = require('./intro').withIntro({
+module.exports = require('./intro').withIntro(require('./alarm').withAlarm({
     id: 'apex',
     title: 'Apex',
     palette: (lookId) => PALETTES[lookId] || PALETTES.comfort,
@@ -268,4 +268,5 @@ module.exports = require('./intro').withIntro({
         );
         return list;
     },
-});
+}));
+

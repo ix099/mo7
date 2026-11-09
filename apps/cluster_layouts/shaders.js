@@ -297,6 +297,8 @@ void main() {
     }
     vec2 d = p - u_geo.xy;
     float r = length(d), R = u_geo.z, T = u_geo.w;
+    /* far from the arc (its glow, marks and numerals): nothing to draw, and no more work for this pixel */
+    if (abs(r - R) > max(T * 1.8, max(T * 0.5 + 18.0, abs(u_marks.w) + u_marks.z)) + 4.0) { gl_FragColor = vec4(0.0); return; }
     float ang = atan(d.x, -d.y) / DEG;
     float a0 = u_span.x, a1 = u_span.y, sweep = a1 - a0;
     /* angle relative to the start, unwrapped towards the sweep */
@@ -384,11 +386,15 @@ void main() {
     /* the two glyphs whose centres are nearest, the more inked of them: a wide letter beside a narrow one
        (the m of 'mi') reaches past the half-way point between their centres */
     float best = 1e4, code = -1.0, cx = 0.0, best2 = 1e4, code2 = -1.0, cx2 = 0.0;
+    /* (the glyphs end where the padding starts, centre -100: the rest of the 32 not looked at) */
+    bool end = false;
     for (int i = 0; i < 8; i++) {
+        if (end) break;
         vec4 c = u_x[i], k = u_text[i];
         for (int j = 0; j < 4; j++) {
             float cj = j == 0 ? c.x : j == 1 ? c.y : j == 2 ? c.z : c.w;
             float kj = j == 0 ? k.x : j == 1 ? k.y : j == 2 ? k.z : k.w;
+            if (cj < -50.0) { end = true; break; }
             float dj = abs(x - cj);
             if (dj < best) { best2 = best; code2 = code; cx2 = cx; best = dj; code = kj; cx = cj; }
             else if (dj < best2) { best2 = dj; code2 = kj; cx2 = cj; }
@@ -805,7 +811,9 @@ void main() {
     if (u_geo.x > 0.0) { float sl = len / u_geo.x, sx = mod(p.x - x0, sl), g = sl * u_geo.y * 0.5; seg = span(sx, g, sl - g); }
     float red = t >= u_red ? 1.0 : 0.0;
     float shift = v >= u_red - 0.04 ? 1.0 : 0.0;
-    float pulse = 0.5 + 0.5 * sin(u_time * 14.0);
+    /* on the clock (Settings > Animations): the shift tint pulses, a sheen runs; off it: solid, none */
+    float clk = u_time > 0.0 ? 1.0 : 0.0;
+    float pulse = mix(1.0, 0.5 + 0.5 * sin(u_time * 14.0), clk);
     float lit = clamp((v - t) * len + 0.5, 0.0, 1.0) * on;
     vec3 fc = mix(mix(u_fill0, u_fill1, clamp(t / max(v, 0.001), 0.0, 1.0)), u_redc, red);
     /* the glow round the lit part */
@@ -816,7 +824,7 @@ void main() {
     float near = clamp(1.0 - (v - t) * 5.0, 0.0, 1.0);
     vec3 c = fc * (0.7 + 0.5 * near);
     float z = (t - (fract(u_time * 0.32) * 1.5 - 0.25) * v) / 0.04;
-    c += vec3(1.0) * exp(-z * z) * 0.4;
+    c += vec3(1.0) * exp(-z * z) * 0.4 * clk;
     c = mix(c, u_redc * 1.15, shift * pulse * 0.65);
     acc = over(acc, c, body * seg * lit);
     /* the spark at the tip */
@@ -826,7 +834,7 @@ void main() {
     if (u_geo.w > 0.0) {
         float m = floor(clamp(t, 0.0, 1.0) * u_geo.w + 0.5), mx = x0 + len * m / u_geo.w;
         vec3 mc = m / u_geo.w >= u_red - 0.001 ? u_redc : u_num;
-        float ty = cy + T * 0.5 + 5.0;
+        float ty = u_lab.y < cy ? cy - T * 0.5 - 12.0 : cy + T * 0.5 + 5.0;
         acc = over(acc, mc, clamp(1.2 - abs(p.x - mx) + 0.5, 0.0, 1.0) * span(p.y, ty, ty + 7.0) * 0.8);
         if (u_lab.x > 0.0) {
             float h = u_lab.x, adv = u_digit_adv, n = m >= 9.5 ? 2.0 : 1.0;
@@ -995,11 +1003,15 @@ void main() {
     float h = u_size.y;
     float x = v_uv.x * u_size.x / h;
     float best = 1e4, code = -1.0, cx = 0.0, best2 = 1e4, code2 = -1.0, cx2 = 0.0;
+    /* (the glyphs end where the padding starts, centre -100: the rest of the 32 not looked at) */
+    bool end = false;
     for (int i = 0; i < 8; i++) {
+        if (end) break;
         vec4 c = u_x[i], k = u_text[i];
         for (int j = 0; j < 4; j++) {
             float cj = j == 0 ? c.x : j == 1 ? c.y : j == 2 ? c.z : c.w;
             float kj = j == 0 ? k.x : j == 1 ? k.y : j == 2 ? k.z : k.w;
+            if (cj < -50.0) { end = true; break; }
             float dj = abs(x - cj);
             if (dj < best) { best2 = best; code2 = code; cx2 = cx; best = dj; code = kj; cx = cj; }
             else if (dj < best2) { best2 = dj; code2 = kj; cx2 = cj; }
@@ -1023,4 +1035,109 @@ void main() {
     gl_FragColor = vec4(mix(u_edge, c, a / max(aa, 0.001)), aa * fade);
 }`;
 
-module.exports = { HIGHP, COMMON, GLYPH, FLAT_FS, PANEL_FS, DIAL_FS, BAND_FS, TEXT_FS, BG_FS, ICON_FS, SPARK_FS, CAR_FS, LEDS_FS, FLAG_FS, EAGLE_FS, FIREWORKS_FS, BLADE_FS, GLINT_FS, AURA_FS, VEIL_FS, EMBLEM_FS, REVEAL_FS };
+/**
+ * A straight line from A to B (px in the layer) with a soft glow: the frames' angled strokes.
+ *   u_seg     A.x, A.y, B.x, B.y;  u_w: thickness px, glow px
+ */
+const SEG_FS = `#version 100
+${HIGHP}
+uniform vec2 u_size;
+uniform vec4 u_seg;
+uniform vec2 u_w;
+uniform vec4 u_color;
+uniform vec4 u_glow;
+varying vec2 v_uv;
+void main() {
+    vec2 p = v_uv * u_size, a = u_seg.xy, ba = u_seg.zw - u_seg.xy;
+    float h = clamp(dot(p - a, ba) / max(dot(ba, ba), 0.001), 0.0, 1.0);
+    float d = length(p - a - ba * h);
+    float core = clamp(u_w.x * 0.5 - d + 0.5, 0.0, 1.0) * u_color.a;
+    float g = d / max(u_w.y, 0.5);
+    float glow = exp(-g * g) * u_glow.a;
+    float a2 = core + glow * (1.0 - core);
+    gl_FragColor = vec4(a2 > 0.0 ? (u_color.rgb * core + u_glow.rgb * glow * (1.0 - core)) / a2 : u_color.rgb, a2);
+}`;
+
+/**
+ * The gear with a shift animation: TEXT_FS's glyphs, moved by u_kick (1 at a change, animated to 0 by the
+ * cluster, engine.js kick): the new gear slides in from the right with a streak behind it and a flash of u_hot;
+ * the old one (u_fx.y 1) slides out to the left and fades.
+ *   u_fx      slide (glyph heights), 0 incoming / 1 outgoing, streak 0..1
+ */
+const GEARFX_FS = `#version 100
+${HIGHP}${GLYPH}
+uniform vec2 u_size;
+uniform vec4 u_text[8];
+uniform vec4 u_x[8];
+uniform vec4 u_color;
+uniform vec4 u_glow;
+uniform vec3 u_hot;
+uniform vec4 u_fx;
+uniform float u_kick;
+varying vec2 v_uv;
+void main() {
+    float h = u_size.y, k = clamp(u_kick, 0.0, 1.0), out1 = u_fx.y;
+    if (out1 > 0.5 && k <= 0.001) { gl_FragColor = vec4(0.0); return; }
+    /* incoming: k*slide to the right of its place; outgoing: (1-k)*slide to the left of it */
+    float x = v_uv.x * u_size.x / h - mix(k * u_fx.x, -(1.0 - k) * u_fx.x, out1);
+    float best = 1e4, code = -1.0, cx = 0.0;
+    bool end = false;
+    for (int i = 0; i < 8; i++) {
+        if (end) break;
+        vec4 c = u_x[i], kk = u_text[i];
+        for (int j = 0; j < 4; j++) {
+            float cj = j == 0 ? c.x : j == 1 ? c.y : j == 2 ? c.z : c.w;
+            float kj = j == 0 ? kk.x : j == 1 ? kk.y : j == 2 ? kk.z : kk.w;
+            if (cj < -50.0) { end = true; break; }
+            float dj = abs(x - cj);
+            if (dj < best) { best = dj; code = kj; cx = cj; }
+        }
+    }
+    float s = sdf(code, vec2(x - cx, v_uv.y));
+    /* the streak: the glyph smeared behind its motion */
+    float dir = out1 > 0.5 ? -1.0 : 1.0, st = u_fx.z * k;
+    float s1 = sdf(code, vec2(x - cx - dir * 0.10 * st, v_uv.y)), s2 = sdf(code, vec2(x - cx - dir * 0.22 * st, v_uv.y));
+    float ink = smoothstep(0.5 - 2.0 / h, 0.5 + 2.0 / h, s);
+    float smear = max(smoothstep(0.45, 0.55, s1) * 0.45, smoothstep(0.45, 0.55, s2) * 0.22) * st * (1.0 - ink);
+    float halo = smoothstep(0.18, 0.5, s) * (1.0 - ink) * min(1.0, u_glow.a + k * 0.6 * (1.0 - out1));
+    float fade = (out1 > 0.5 ? k * 0.75 : 1.0) * smoothstep(0.0, 0.18, v_uv.x) * smoothstep(1.0, 0.82, v_uv.x);
+    vec3 ic = mix(u_color.rgb, u_hot, k * 0.85 * (1.0 - out1));
+    float a = (ink * u_color.a + halo * 0.7 + smear) * fade;
+    vec3 c = (ic * ink * u_color.a + mix(u_glow.rgb, u_hot, k) * halo * 0.7 + u_hot * smear) / max(ink * u_color.a + halo * 0.7 + smear, 0.001);
+    gl_FragColor = vec4(c, clamp(a, 0.0, 1.0));
+}`;
+
+/**
+ * The rev alarm's light (alarm.js): red glowing in from the layer's chosen sides with a bright line along them,
+ * as strong as u_alarm (0..1, pulsed by the cluster while the alarm is on: engine.js hold). At 0 nothing, and
+ * almost no work.
+ *   u_edge    glow from the left, right, top, bottom side (1 / 0);  u_depth: the glow's depth px, the line's inset px
+ *   u_ends    a soft fade at the start and the end of the strip's length px (0: a hard end, where it meets another)
+ */
+const ALARM_FS = `#version 100
+${HIGHP}
+uniform vec2 u_size;
+uniform float u_alarm;
+uniform vec4 u_edge;
+uniform vec2 u_depth;
+uniform vec2 u_ends;
+uniform vec3 u_color;
+uniform vec3 u_core;
+varying vec2 v_uv;
+void main() {
+    float k = clamp(u_alarm, 0.0, 1.0);
+    if (k <= 0.002) { gl_FragColor = vec4(0.0); return; }
+    vec2 p = v_uv * u_size;
+    float d = 1e4;
+    if (u_edge.x > 0.5) d = min(d, p.x);
+    if (u_edge.y > 0.5) d = min(d, u_size.x - p.x);
+    if (u_edge.z > 0.5) d = min(d, p.y);
+    if (u_edge.w > 0.5) d = min(d, u_size.y - p.y);
+    float g = d / u_depth.x, l = (d - u_depth.y) / 1.6;
+    float glow = exp(-g * g * 2.2), line = exp(-l * l);
+    float along = u_size.x >= u_size.y ? p.x : p.y, len = max(u_size.x, u_size.y);
+    float ends = (u_ends.x > 0.0 ? smoothstep(0.0, u_ends.x, along) : 1.0) * (u_ends.y > 0.0 ? smoothstep(0.0, u_ends.y, len - along) : 1.0);
+    gl_FragColor = vec4(mix(u_color, u_core, line * 0.6), clamp(k * (glow * 0.7 + line * 0.85) * ends, 0.0, 1.0));
+}`;
+
+module.exports = { HIGHP, COMMON, GLYPH, FLAT_FS, PANEL_FS, DIAL_FS, BAND_FS, TEXT_FS, BG_FS, ICON_FS, SPARK_FS, CAR_FS, LEDS_FS, FLAG_FS, EAGLE_FS, FIREWORKS_FS, BLADE_FS, GLINT_FS, AURA_FS, VEIL_FS, EMBLEM_FS, REVEAL_FS, SEG_FS, GEARFX_FS, ALARM_FS };

@@ -2,7 +2,7 @@
   "id": "cluster_layouts",
   "title": "Cluster Layouts",
   "description": "Your own layout on the whole instrument cluster (round dials, gear, temperatures), drawn by the cluster itself",
-  "version": "0.14.0",
+  "version": "0.15.0",
   "startType": "autostart",
   "vendor": "custom",
   "loggingId": "OA9L",
@@ -99,7 +99,7 @@
       "key": "vehicle",
       "label": "Vehicle",
       "type": "choice",
-      "default": "auto",
+      "default": "ice",
       "options": [
         [
           "auto",
@@ -120,7 +120,7 @@
       "label": "Fuel tank size",
       "type": "number",
       "unit": "L",
-      "default": 69,
+      "default": 83,
       "steps": [
         40,
         42,
@@ -180,7 +180,7 @@
       "key": "layout",
       "label": "Layout",
       "type": "choice",
-      "default": "analog_sport",
+      "default": "mo7",
       "options": [
         [
           "analog_sport",
@@ -217,6 +217,10 @@
         [
           "kenawy",
           "Kenawy (digital luxury, animated)"
+        ],
+        [
+          "mo7",
+          "Mo7 (motorsport, gear animation, shift alert)"
         ]
       ]
     },
@@ -262,17 +266,17 @@
     },
     {
       "key": "cluster",
-      "label": "Cluster",
+      "label": "Boxes in the middle of the cluster",
       "type": "choice",
-      "default": "standard",
+      "default": "m",
       "options": [
         [
-          "standard",
-          "Standard (X5 and other G models)"
+          "m",
+          "Yes: two dark boxes in the middle (as on this X5 40i), readings moved round them"
         ],
         [
-          "m",
-          "M car: two more boxes in the middle, readings moved round them"
+          "standard",
+          "No: only the gear box right of centre"
         ]
       ]
     },
@@ -332,7 +336,7 @@
       "key": "speedUnit",
       "label": "Speed unit",
       "type": "choice",
-      "default": "mph",
+      "default": "kmh",
       "options": [
         [
           "mph",
@@ -348,7 +352,7 @@
       "key": "tempUnit",
       "label": "Temperature unit",
       "type": "choice",
-      "default": "f",
+      "default": "c",
       "options": [
         [
           "f",
@@ -422,6 +426,55 @@
       ]
     },
     {
+      "key": "motion",
+      "label": "Animations (Kenawy's light blade, glints and glow)",
+      "type": "choice",
+      "default": "on",
+      "options": [
+        [
+          "on",
+          "On: always moving"
+        ],
+        [
+          "off",
+          "Off: still (lighter on the cluster)"
+        ]
+      ]
+    },
+    {
+      "key": "revAlarm",
+      "label": "Rev alarm: red light pulsing round the edges (Apex, Kenawy, Mo7)",
+      "type": "choice",
+      "default": "on",
+      "options": [
+        [
+          "on",
+          "On"
+        ],
+        [
+          "off",
+          "Off"
+        ]
+      ]
+    },
+    {
+      "key": "alarmRpm",
+      "label": "Rev alarm from",
+      "type": "number",
+      "unit": "rpm",
+      "default": 6000,
+      "steps": [
+        4000,
+        4500,
+        5000,
+        5500,
+        6000,
+        6500,
+        7000,
+        7500
+      ]
+    },
+    {
       "key": "demo",
       "label": "Demo data",
       "type": "choice",
@@ -441,7 +494,7 @@
       "key": "timeZone",
       "label": "Time zone (the clock)",
       "type": "choice",
-      "default": "eastern",
+      "default": "eet",
       "options": [
         [
           "eastern",
@@ -497,7 +550,7 @@
       "key": "clock",
       "label": "Clock",
       "type": "choice",
-      "default": "12",
+      "default": "24",
       "options": [
         [
           "12",

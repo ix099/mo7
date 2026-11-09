@@ -112,7 +112,7 @@ function tempTile(o, key, which, x, y, w, redC) {
 const temps = (o, x, y, gap, w) => [].concat(tempTile(o, 'oil', 'oil', x, y, w, 130), tempTile(o, 'coolant', 'coolant', x + gap, y, w, 118), tempTile(o, 'gbox', 'gearbox', x + gap * 2, y, w, 125));
 const speedTxt = (o) => (d) => C.speedText(o, d);
 
-module.exports = require('./intro').withIntro({
+module.exports = require('./intro').withIntro(require('./alarm').withAlarm({
     id: 'kenawy',
     title: 'Kenawy',
     palette: (lookId) => PALETTES[lookId] || PALETTES.comfort,
@@ -152,7 +152,8 @@ module.exports = require('./intro').withIntro({
             temps(o, 1440, 492, 160, 136),
         );
     },
-});
+}));
+
 
 /*
  * Map centre: the map (Waze, the stock map, or what the car shows there) in its window, framed by glinting

@@ -64,6 +64,7 @@ mgu.run({
             boxClear: settings.get('boxClear') === 'on',
             cluster: settings.get('cluster') === 'm' ? 'm' : 'standard',   // an M car's KOMBI: its two boxes in the middle (layouts.js)
             boxBezel: settings.get('boxBezel') === 'on',   // (off: the box sits on the plain background)
+            alarmRpm: settings.get('revAlarm') === 'off' ? 0 : Number(settings.get('alarmRpm')) || 6000,   // the rev alarm (alarm.js)
             vehicle: D.vehicle().vehicle,      // set, or found from the car (Auto)
         });
         /** Live: demo data on, or the car's signals answer (a parked car sends nothing new for minutes, so a
@@ -93,6 +94,7 @@ mgu.run({
             enabled: showing,
             sweep: () => settings.get('sweep') !== 'off',
             intro: () => settings.get('welcome') !== 'off',
+            motion: () => settings.get('motion') !== 'off',
             target: 'panel',
             onFresh: D.onFresh,
         });

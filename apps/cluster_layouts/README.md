@@ -3,8 +3,8 @@
 *Part of [iDrive 7 cluster apps](../../README.md), with Cluster Info and [Cluster Centre](../cluster_centre/README.md).*
 
 Custom layouts for the whole instrument cluster of a BMW with iDrive 7 (MGU), **drawn by the cluster
-itself**. Nine original layouts (Analog sport, Digital round, Modern wide, Digital dash, Freedom, Retro,
-Track, Apex and Kenawy), each in comfort, sport and efficient colours (following the selector's S / M
+itself**. Ten original layouts (Analog sport, Digital round, Modern wide, Digital dash, Freedom, Retro,
+Track, Apex, Kenawy and Mo7), each in comfort, sport and efficient colours (following the selector's S / M
 programme, or chosen), each with three centres: the **readings**, the **map** (Waze or the stock map shows in
 the middle), or the **stock** centre content.
 
@@ -137,7 +137,8 @@ blade runs under it.
 
 ### The welcome (Apex and Kenawy)
 
-When the cluster comes up with the car standing: a black veil, the emblem drawn in (its ring sweeping round,
+When the cluster comes up with the car standing (it waits until the KOMBI shows it, up to 2.5 s, so its own
+start-up animation is not played over; a settings change or the car found does not cut it): a black veil, the emblem drawn in (its ring sweeping round,
 the letters, the quartered centre spinning into place, a glint) and WELCOME with the owner's name revealed by an
 edge of light; then it fades and the needles sweep (`intro.js`, `engine.js`; one number the cluster animates
 itself). Once, and again only after the car was parked for 10 minutes; never while moving (it ends at once
@@ -146,6 +147,44 @@ from 6 km/h). Settings > Welcome turns it off; the name is `NAME` in `intro.js`.
 | Welcome | M car |
 |---|---|
 | ![](../../docs/welcome.png) | ![](../../docs/welcome_mcar.png) |
+
+### Mo7 (motorsport, the default here)
+
+A trapezoid frame across the top holds the engine speed as a long segmented bar, its numerals over it and the red
+zone at its end; the speed large on the left; under the middle the gear big between two chevrons with the drive
+mode under it. On a gear change the new gear slides in with a streak and a flash while the old one slides out
+and fades: the cluster plays it from one message (`engine.js` kick, `GEARFX_FS`). The temperatures with their
+bars on the left, the boost and torque (petrol, diesel) or the charge and power (plug-in hybrid) on the right,
+the fuel range, outside temperature and time along the bottom. **It keeps the whole band in the middle (x
+770-1670, y 262-458) black on every car**, so the KOMBI's dark boxes there never sit on a reading. Light on the
+cluster: nothing on the renderer's clock, every stroke its own small layer (`SEG_FS`).
+
+![Mo7](../../docs/mo7.png)
+
+| A gear change (3 -> 4) | The rev alarm (SHIFT) | Map in the centre |
+|---|---|---|
+| ![](../../docs/mo7_shift.png) | ![](../../docs/mo7_alarm.png) | ![](../../docs/mo7_map.png) |
+
+### The rev alarm (Apex, Kenawy, Mo7)
+
+From Settings > Rev alarm from (6000 rpm by default) red light pulses round the cluster's edges like an alarm,
+until the engine speed is 150 rpm below it again (`alarm.js`, `ALARM_FS`). The cluster loops the pulse itself
+while it is on (engine.js hold: one message to start it, one to stop it); off, its strips draw nothing. They keep
+to the glass's edges, off the KOMBI's boxes, the cowl, the corners and the warning lights. Mo7 also turns its
+frame, bar and chevrons red and shows SHIFT under the gear. Settings > Rev alarm turns it off.
+
+| Kenawy | Apex |
+|---|---|
+| ![](../../docs/alarm_kenawy.png) | ![](../../docs/alarm_apex.png) |
+
+### This fork's defaults: an X5 xDrive40i
+
+Mo7, km/h, °C, 24-hour clock, Eastern Europe time zone, Vehicle petrol (boost, torque, timing instead of the
+battery), an 83 L tank, and **Boxes in the middle of the cluster: yes** (Settings > Cluster): on this car the
+KOMBI leaves two dark boxes in the middle of the panel too, not only on M cars, so Apex and Kenawy move their
+readings round them. Settings > Animations off stills Kenawy's blade, glints and glow (lighter on the cluster).
+The shaders skip the empty parts of the arcs and the unused glyph slots of every text (the same look, less work
+for the KOMBI's GPU, every layout).
 
 *(Drawn by `tools/preview.js` from the same shaders the cluster runs; the map is a stand-in for the real one.)*
 
