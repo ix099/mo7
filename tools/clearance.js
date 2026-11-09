@@ -11,6 +11,10 @@ function clashes(p, o) {
     const C = C0, out = [];
     const isBg = /^bg|^boxBezel$/.test(p.key) || (p.kind === 'flat' && /bg/.test(String(p.colour || p.key)));
     if (isBg) return out;
+    /* boxTolerant: allowed in the KOMBI's box zones (content that tolerates being covered, or a zone the owner's
+     * calibration photo shows empty on this car - the gear bracket); still kept off the cowl, the corners and
+     * the warning lights below. */
+    const tolerant = !!p.boxTolerant;
     // a band along an arc (u_geo: centre in the layer, radius, thickness): the points of its ink, every 3 degrees
     const g = p.kind === 'band' && p.params && p.params.u_geo, sp = p.params && p.params.u_span;
     if (g && g[2] > 0 && sp) {
@@ -21,9 +25,9 @@ function clashes(p, o) {
         }
         const inB = (b) => pts.some(([x, y]) => x > b.x && x < b.x + b.w && y > b.y && y < b.y + b.h);
         if (inB(C.NOTCH)) out.push('under the cowl');
-        if (inB(C.GEARBOX_HOLE)) out.push('in the gear box');
-        if (inB(C.EDRIVE_HOLE)) out.push('under the eDrive box');
-        if (C.mCar(o) && C.M_HOLES.some(inB)) out.push('in an M box');
+        if (!tolerant && inB(C.GEARBOX_HOLE)) out.push('in the gear box');
+        if (!tolerant && inB(C.EDRIVE_HOLE)) out.push('under the eDrive box');
+        if (!tolerant && C.mCar(o) && C.M_HOLES.some(inB)) out.push('in an M box');
         if (inB(C.TELLTALES)) out.push('over the warning lights');
         if (pts.some(([x, y]) => C.inCorner(x, y))) out.push('in a corner');
         return out;
@@ -34,9 +38,9 @@ function clashes(p, o) {
         ? (() => { const nx = Math.max(b.x, Math.min(cx, b.x + b.w)), ny = Math.max(b.y, Math.min(cy, b.y + b.h)); return (nx - cx) ** 2 + (ny - cy) ** 2 < (r - 6) ** 2; })()
         : p.x < b.x + b.w && p.x + p.w > b.x && p.y < b.y + b.h && p.y + p.h > b.y);
     if (hit(C.NOTCH)) out.push('under the cowl');
-    if (hit(C.GEARBOX_HOLE)) out.push('in the gear box');
-    if (hit(C.EDRIVE_HOLE)) out.push('under the eDrive box');
-    if (C.mCar(o) && C.M_HOLES.some(hit)) out.push('in an M box');
+    if (!tolerant && hit(C.GEARBOX_HOLE)) out.push('in the gear box');
+    if (!tolerant && hit(C.EDRIVE_HOLE)) out.push('under the eDrive box');
+    if (!tolerant && C.mCar(o) && C.M_HOLES.some(hit)) out.push('in an M box');
     if (hit(C.TELLTALES)) out.push('over the warning lights');
     const pts = round ? [[cx - r * 0.7, cy - r * 0.7], [cx + r * 0.7, cy - r * 0.7], [cx, cy - r]] : [[p.x, p.y], [p.x + p.w, p.y]];
     if (pts.some(([x, y]) => C.inCorner(x, y))) out.push('in a corner');

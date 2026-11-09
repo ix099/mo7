@@ -107,30 +107,28 @@ the drive) and the drive's peak power (or boost), and the ranges and charge righ
 
 ### Toro (the default here)
 
-The owner's cockpit, an original design. **One arrangement in every drive mode - only the colours change**
-(amber in COMFORT, red in SPORT, green in ECO PRO / ELECTRIC), built round the TWO boxes his KOMBI draws over
-every app, **measured on the car with the calibration grid** (Settings > Band grid: six numbered cells over the
-middle; the numbers a photo shows hidden are the boxes' cells). On this G05 xDrive40i they are the two the
-upstream repo calls M_BOXES - x 793-1039 y 289-381 and x 1223-1394 y 328-406 - and nothing else; pure black is
-laid exactly under them and everything else is used. The stock gear bracket's zone (x 1490-1652, y 271-442) did
-not show on his photo and holds nothing critical, in case it returns.
+The owner's cockpit, mark II: an original motorsport display, rebuilt from a clean sheet after his reference
+boards. A near-black gradient with a sharp angular outline frame; a full-width SEGMENTED RPM RIBBON across the
+top with its numerals (a sheen runs along it, its tip sparks, it pulses red at the shift point); the speed huge
+on the left over a breathing glow; the GEAR huge right of centre between two chevrons, the new gear sliding in
+with a streak on a change (the cluster plays it from one message) and the drive mode in a lit pill; the owner's
+two must-have gauges - FUEL and COOLANT - as classic arc gauges side by side in the middle (the fuel red on the
+reserve with the pump in it, the coolant's red zone at the hot end with the thermometer); boost and timing
+(petrol / diesel; charge and electric range on a plug-in hybrid) stacked between the KOMBI's two boxes; torque
+and the gearbox under the gear; the name engraved in the bottom frame line. **One arrangement in every drive
+mode - only the colours change**: silver-white in COMFORT, red in SPORT, green in ECO PRO / ELECTRIC.
 
-A dark hexagonal carbon weave, a framed edge with travelling glints, the owner's nameplate in the header. The
-tach is a big flat-top hexagon with an instrument face, a rim-lit segmented ring, numerals inside on its own
-edges, a bright blade at the reading, the gear huge in its centre (a change slides the new gear in with a
-streak while the old slides out - the cluster plays it from one message) and the drive mode in a lit pill
-(SHIFT, red, while the rev alarm is on). The speed stands huge under the boxes; boost and timing (petrol /
-diesel; charge and electric range on a plug-in hybrid) fill the gap between them with their icons and bars;
-torque and the gearbox sit right of them; and the owner's two must-haves - **a small fuel gauge and a small
-coolant gauge** - are hexagons of the same family: the fuel ring filled with the tank (red on the reserve, the
-pump and the range in it), the coolant ring with its red zone at the hot end (the thermometer and the reading
-in it).
+The KOMBI's two boxes were measured on the car with the calibration grid (Settings > Band grid; the numbers a
+photo shows hidden are the boxes' cells): exactly the two upstream M_BOXES rectangles, in every mode, and no
+gear bracket - so pure black is laid under those two alone, and the bracket's zone carries the gear digit,
+marked `boxTolerant` (tools/clearance.js): if some state brings the bracket back it sits on the gear and the
+owner reports it.
 
 ![Toro](../../docs/toro.png)
 
-| SPORT (a gear change) | ECO PRO | Map in the centre | The calibration grid |
+| SPORT (a gear change) | ECO PRO | The rev alarm | Map in the centre |
 |---|---|---|---|
-| ![](../../docs/toro_boxes.png) | ![](../../docs/toro_eco.png) | ![](../../docs/toro_map.png) | ![](../../docs/toro_grid.png) |
+| ![](../../docs/toro_boxes.png) | ![](../../docs/toro_eco.png) | ![](../../docs/toro_alarm.png) | ![](../../docs/toro_map.png) |
 
 ### The welcome (Toro)
 

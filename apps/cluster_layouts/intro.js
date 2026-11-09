@@ -9,7 +9,6 @@
  * Positions keep off the camera's cowl, the KOMBI's gear box and the warning lights; with Settings > Cluster:
  * M car the name goes above the band of the M boxes and the emblem below it.
  */
-const C = require('./layout_common');
 const font = require('./font');
 
 /* the owner's name, as the welcome shows it: change it here */
@@ -21,10 +20,9 @@ const EMBLEM = { blue: '#1c69d4', white: '#f2f5f8', ring: '#0a0a0b', metal: '#c9
 
 /** The welcome's pieces (intro: true), coloured from the layout's palette (t.accent, else t.glow). */
 function introPieces(o) {
-    const m = C.mCar(o);
     const accent = (t) => t.accent || t.glow || '#c9a05a';
-    // [emblem centre y, emblem size, greeting y, name y]: M car: the name above the M boxes' band, the emblem below
-    const [ey, es, gy, ny] = m ? [556, 184, 140, 170] : [262, 246, 404, 440];
+    // the name above the KOMBI's boxes (the owner's two sit at y 275-420), the emblem below them
+    const ey = 556, es = 184, gy = 140, ny = 170;
     const codes = ['B', 'M', 'W'].map((ch) => font.codeOf(ch));
     return [
         { key: 'bgVeil', kind: 'veil', x: 0, y: 0, w: 1920, h: 720, intro: true,
