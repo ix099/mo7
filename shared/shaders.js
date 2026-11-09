@@ -1230,7 +1230,9 @@ void main() {
             float i = floor(x / adv);
             if (i >= 0.0 && i < n) {
                 float sd = sdf(digitOf(vk, i, n), vec2(x - (i + 0.5) * adv, q.y + 0.5));
-                acc = over(acc, tm >= u_red - 0.001 ? u_redc : u_num, smoothstep(0.5 - 2.0 / h, 0.5 + 2.0 / h, sd));
+                float ink = smoothstep(0.5 - 2.0 / h, 0.5 + 2.0 / h, sd);
+                acc = over(acc, tm >= u_red - 0.001 ? u_redc : u_fill1, smoothstep(0.22, 0.5, sd) * (1.0 - ink) * 0.4);
+                acc = over(acc, tm >= u_red - 0.001 ? u_redc : u_num, ink);
             }
         }
     }
@@ -1242,22 +1244,33 @@ void main() {
  *   u_hex     centre x, y, R, line width px;  u_soft: the glow's reach px
  */
 const HEXLINE_FS = `#version 100
-${HIGHP}
+${HIGHP}${COMMON}
 uniform vec2 u_size;
 uniform vec4 u_hex;
 uniform float u_soft;
 uniform vec4 u_color;
 uniform vec3 u_glow;
+uniform vec4 u_face0;              /* the instrument face inside: its centre colour (alpha 0: no face) */
+uniform vec4 u_face1;              /* and its edge colour */
 varying vec2 v_uv;
 float hexd(vec2 q) { q = abs(q); return max(q.x * 0.8660254 + q.y * 0.5, q.y); }
 void main() {
     vec2 d = v_uv * u_size - u_hex.xy;
-    float e = abs(hexd(d) - u_hex.z);
+    float hh = hexd(d);
+    float e = abs(hh - u_hex.z);
+    vec4 acc = vec4(0.0);
+    if (u_face0.a > 0.0) {
+        /* the face: darker towards the ring, a faint top light - the gauge reads as a real instrument */
+        float inside = clamp(u_hex.z - 1.0 - hh + 0.5, 0.0, 1.0);
+        vec3 face = mix(u_face0.rgb, u_face1.rgb, clamp(hh / max(u_hex.z, 1.0), 0.0, 1.0));
+        face *= 1.0 + 0.07 * clamp(-d.y / max(u_hex.z, 1.0), 0.0, 1.0);
+        acc = over(acc, face, inside * u_face0.a);
+    }
     float line = clamp(u_hex.w * 0.5 - e + 0.5, 0.0, 1.0) * u_color.a;
     float g = e / max(u_soft, 0.5);
-    float glow = exp(-g * g) * 0.4;
-    float a = clamp(line + glow, 0.0, 1.0);
-    gl_FragColor = vec4(a > 0.0 ? (u_color.rgb * line + u_glow * glow * (1.0 - line)) / a : u_color.rgb, a);
+    acc = over(acc, u_glow, exp(-g * g) * 0.4);
+    acc = over(acc, u_color.rgb, line);
+    gl_FragColor = acc;
 }`;
 
 /**

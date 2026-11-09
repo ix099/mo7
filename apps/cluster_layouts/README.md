@@ -113,15 +113,21 @@ glints, and a big flat-top **hexagon** in the middle whose ring is the tach (`HE
 red / green with the look, the red zone at its end, the numerals inside on the hexagon's own edges - with the
 gear huge in its centre and the drive mode in a lit pill under it. On a gear change the new gear slides in with
 a streak while the old one slides out and fades: the cluster plays it from one message (`engine.js` kick,
-`GEARFX_FS`). The digital speed stands large with wide boost / power and fuel bars under it; temperatures,
-boost and torque (petrol / diesel) or charge and power (plug-in hybrid), outside and the xDrive split sit in
-tiles with slim bars.
+`GEARFX_FS`). The digital speed stands large; the fuel is a small hexagon gauge
+of the same family with the pump in it, turning red on the reserve; and every other reading sits in a tile with
+an expressive icon and a slim bar - the thermometer, oil drop and gear for the temperatures, the turbo and
+engine for boost and torque (petrol / diesel) or the battery and bolt for charge and power (plug-in hybrid),
+the gauge for the timing, the air for the intake.
+
+**One arrangement in every drive mode, only the colours change** (Colours: Auto follows the mode: amber in
+COMFORT, red in SPORT, green in ECO PRO / ELECTRIC), and the owner's name sits as a small nameplate in the
+header - also under the speed with the map in the centre, and over the readings with the stock centre.
 
 ![Toro](../../docs/toro.png)
 
-| The KOMBI's boxes up (SPORT, a gear change) | Map in the centre |
-|---|---|
-| ![](../../docs/toro_boxes.png) | ![](../../docs/toro_map.png) |
+| SPORT (a gear change) | ECO PRO | Map in the centre |
+|---|---|---|
+| ![](../../docs/toro_boxes.png) | ![](../../docs/toro_eco.png) | ![](../../docs/toro_map.png) |
 
 ### The KOMBI's boxes, and how Toro hides them
 
