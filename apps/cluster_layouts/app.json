@@ -2,7 +2,7 @@
   "id": "cluster_layouts",
   "title": "Cluster Layouts",
   "description": "Your own layout on the whole instrument cluster (round dials, gear, temperatures), drawn by the cluster itself",
-  "version": "0.17.0",
+  "version": "0.17.1",
   "startType": "autostart",
   "vendor": "custom",
   "loggingId": "OA9L",
@@ -273,6 +273,22 @@
         [
           "never",
           "Never: only the gear box right of centre"
+        ]
+      ]
+    },
+    {
+      "key": "bandGrid",
+      "label": "Band grid: numbered cells over the middle band (photograph it to map this car's boxes)",
+      "type": "choice",
+      "default": "off",
+      "options": [
+        [
+          "off",
+          "Off"
+        ],
+        [
+          "on",
+          "On: cells 1-6 with their numbers (calibration)"
         ]
       ]
     },

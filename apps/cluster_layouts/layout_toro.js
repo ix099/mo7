@@ -213,6 +213,7 @@ module.exports = require('./intro').withIntro(alarm.withAlarm({
      * with the boxes up (Boxes Always, the default here, or Auto in a SPORT mode), the whole middle band.
      */
     pieces(o) {
+        if (o.bandGrid && o.centre !== 'map' && o.centre !== 'stock') return gridLayout(o);
         if (o.centre === 'map') return mapLayout(o);
         if (o.centre === 'stock') return stockLayout(o);
         if (C.mCar(o)) return boxesLayout(o);
@@ -236,6 +237,36 @@ module.exports = require('./intro').withIntro(alarm.withAlarm({
         tile('r3', r3.ic, 1676, 540, 224, r3.v, r3.c, r3.f, undefined, evBar));
     },
 }));
+
+
+/*
+ * The calibration grid (Settings > Band grid): the middle band divided into six numbered cells, 1-3 across the
+ * top and 4-6 across the bottom. The KOMBI's own boxes sit ABOVE them, so in a photo the numbers they cover are
+ * missing: that maps this car's boxes exactly, one photo per drive mode (they can differ). The rest of the
+ * screen is kept bare so nothing distracts from the grid.
+ */
+function gridLayout(o) {
+    const BAND = { x: 770, y: 256, w: 900, h: 206 };
+    const cw = BAND.w / 3, ch = BAND.h / 2;
+    const cells = [];
+    for (let r = 0; r < 2; r++) for (let c = 0; c < 3; c++) {
+        const n = r * 3 + c + 1, x = Math.round(BAND.x + c * cw), y = Math.round(BAND.y + r * ch);
+        cells.push(
+            { key: 'cell' + n, kind: 'panel', x: x + 4, y: y + 4, w: Math.round(cw) - 8, h: Math.round(ch) - 8,
+                params: { u_box: [10, 1.5, 0, 0.35] }, colors: (t) => ({ top: t.chipTop, bottom: t.chipBottom, border: t.accent }) },
+            C.text('cellNum' + n, x, y + Math.round(ch / 2) - 34, Math.round(cw), 68, String(n), acc),
+        );
+    }
+    return carbon([{ x: 0, y: 0, w: 1920, h: 720 }], [C.EDRIVE_HOLE]).concat(
+        [C.flat('bgBand', BAND.x, BAND.y, BAND.w, BAND.h, () => '#000000')], cells, [
+            C.text('calib1', 200, 150, 1520, 26, 'BAND CALIBRATION', acc, { tracking: 0.4 }),
+            C.text('calib2', 200, 196, 1520, 18, 'PHOTOGRAPH IT IN EACH DRIVE MODE', lbl, { tracking: 0.2 }),
+            C.text('calib3', 200, 500, 1520, 18, 'SEND THE HIDDEN NUMBERS', lbl, { tracking: 0.2 }),
+            speedDigits(o, 200, 540, 300, 90, 0),
+            C.text('speedUnit', 510, 596, 100, 18, C.speedUnit(o), lbl, { align: 0 }),
+            C.text('clock', 1500, 560, 220, 36, C.clock, txt, { align: 1 }),
+        ]);
+}
 
 /*
  * The main arrangement (Boxes Always, the default - the KOMBI's boxes are up in every mode on this car; or Auto
