@@ -107,55 +107,30 @@ the drive) and the drive's peak power (or boost), and the ranges and charge righ
 
 ### Toro (the default here)
 
-A supercar cockpit in the spirit of the newest Italian V12 clusters, an original design: a dark hexagonal
-carbon weave dresses the whole panel (`HEXPAT_FS`, continuous across its layers), a framed edge with travelling
-glints, and a big flat-top **hexagon** in the middle whose ring is the tach (`HEXBAND_FS`) - segmented, amber /
-red / green with the look, the red zone at its end, the numerals inside on the hexagon's own edges - with the
-gear huge in its centre and the drive mode in a lit pill under it. On a gear change the new gear slides in with
-a streak while the old one slides out and fades: the cluster plays it from one message (`engine.js` kick,
-`GEARFX_FS`). The digital speed stands large; the fuel is a small hexagon gauge
-of the same family with the pump in it, turning red on the reserve; and every other reading sits in a tile with
-an expressive icon and a slim bar - the thermometer, oil drop and gear for the temperatures, the turbo and
-engine for boost and torque (petrol / diesel) or the battery and bolt for charge and power (plug-in hybrid),
-the gauge for the timing, the air for the intake.
+The owner's cockpit, an original design. **One arrangement in every drive mode - only the colours change**
+(amber in COMFORT, red in SPORT, green in ECO PRO / ELECTRIC), built round the TWO boxes his KOMBI draws over
+every app, **measured on the car with the calibration grid** (Settings > Band grid: six numbered cells over the
+middle; the numbers a photo shows hidden are the boxes' cells). On this G05 xDrive40i they are the two the
+upstream repo calls M_BOXES - x 793-1039 y 289-381 and x 1223-1394 y 328-406 - and nothing else; pure black is
+laid exactly under them and everything else is used. The stock gear bracket's zone (x 1490-1652, y 271-442) did
+not show on his photo and holds nothing critical, in case it returns.
 
-**One arrangement in every drive mode, only the colours change** (Colours: Auto follows the mode: amber in
-COMFORT, red in SPORT, green in ECO PRO / ELECTRIC), and the owner's name sits as a small nameplate in the
-header - also under the speed with the map in the centre, and over the readings with the stock centre.
+A dark hexagonal carbon weave, a framed edge with travelling glints, the owner's nameplate in the header. The
+tach is a big flat-top hexagon with an instrument face, a rim-lit segmented ring, numerals inside on its own
+edges, a bright blade at the reading, the gear huge in its centre (a change slides the new gear in with a
+streak while the old slides out - the cluster plays it from one message) and the drive mode in a lit pill
+(SHIFT, red, while the rev alarm is on). The speed stands huge under the boxes; boost and timing (petrol /
+diesel; charge and electric range on a plug-in hybrid) fill the gap between them with their icons and bars;
+torque and the gearbox sit right of them; and the owner's two must-haves - **a small fuel gauge and a small
+coolant gauge** - are hexagons of the same family: the fuel ring filled with the tank (red on the reserve, the
+pump and the range in it), the coolant ring with its red zone at the hot end (the thermometer and the reading
+in it).
 
 ![Toro](../../docs/toro.png)
 
-| SPORT (a gear change) | ECO PRO | Map in the centre |
-|---|---|---|
-| ![](../../docs/toro_boxes.png) | ![](../../docs/toro_eco.png) | ![](../../docs/toro_map.png) |
-
-### The KOMBI's boxes, and how Toro hides them
-
-The KOMBI draws its own widgets **above** every app's panel: its gear bracket right of centre always, and - on
-this G05 xDrive40i, not only on M cars - its two sport readouts in the middle **while the drive mode is SPORT /
-SPORT INDIVIDUAL** (photos of the car confirm all three). No app can draw over them; they can only be made to
-vanish into pure black, so Toro cuts its carbon weave round every box and lays exact black under it. With
-**Boxes: Always** (the default - on the owner's car the boxes are up in COMFORT and ECO PRO too, not only in
-SPORT) the layouts keep their readings out of the middle band in every mode: the band is a framed black blade
-across the design, the hexagon left of it and the speed under it. 'Auto' moves out of the band only while a
-SPORT mode is on (cars that draw the readouts just then; the layout is redrawn when the mode changes, logged);
-'Never' is the opt-out. A stored pre-0.16 'standard' counts as Always.
-
-Truly removing the two sport readouts is the stock cluster's own business, and it offers it (verified in
-BMW's G-series iDrive 7 manuals and BimmerCode's official G05 list):
-
-- **The setting**: iDrive, CAR > Settings > Displays > **Driving mode view** off - the cluster then keeps its
-  standard view when the drive mode changes, so the sport readouts are never drawn (the widgets themselves are
-  also listed under CAR > Driving information > Sport displays). No coding, per driver profile, reversible.
-- **Coding** (BimmerCode, G05, "Headunit" HU_MGU): **Sport displays values** (`SPORT_DISPLAYS_LAYOUT`) - its
-  values include "Not active"; what box-free "custom cluster" installs typically switch off.
-- The gear bracket right of centre has no such switch: it blends into the pure black (and a stored pre-0.16
-  Boxes value of "standard" now counts as Auto, so updated cars get it handled; "Never" is the explicit opt-out).
-- The `cluster-render` service hides the stock CarPlay maneuver box by **holding its slot** with an empty scene
-  (0x105 / 0x103, verified on cars). Whether the gear bracket is slot-mapped the same way, the renderer's slot
-  report on **Signals page 2** says (photograph it in COMFORT and in SPORT INDIVIDUAL, or take the Logs file
-  from a USB stick): if it is, a small cluster-render patch (holds following the `panel` target) removes it for
-  real too.
+| SPORT (a gear change) | ECO PRO | Map in the centre | The calibration grid |
+|---|---|---|---|
+| ![](../../docs/toro_boxes.png) | ![](../../docs/toro_eco.png) | ![](../../docs/toro_map.png) | ![](../../docs/toro_grid.png) |
 
 ### The welcome (Toro)
 

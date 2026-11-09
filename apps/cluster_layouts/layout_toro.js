@@ -1,24 +1,33 @@
 'use strict';
 /**
- * layout_toro.js - "Toro": a supercar cockpit in the spirit of the newest Italian V12 clusters, drawn as an
- * original design (no maker's marks or names). One arrangement in every drive mode - only the colours change
- * with it (amber in COMFORT, red in SPORT, green in ECO PRO / ELECTRIC) - built so the KOMBI's boxes never
- * touch a reading: the middle band (x 770-1670, y 256-462) is a framed pure-black blade the boxes vanish into
- * (they are drawn ABOVE every app, so black underneath is the only thing that hides them).
+ * layout_toro.js - "Toro": the owner's cockpit, an original design (no maker's marks or names). ONE arrangement
+ * in every drive mode - only the colours change with it (amber in COMFORT, red in SPORT, green in ECO PRO /
+ * ELECTRIC) - built round the TWO boxes his KOMBI actually draws over every app, measured with the calibration
+ * grid (0.17.1) on his G05 xDrive40i, 2026-11-09: one over cell 1 reaching into 4, one on the 2/3/5/6 corner.
+ * Pure black is laid exactly under those two (they vanish into it) and everything else is used.
  *
- * A dark hexagonal carbon weave dresses the panel (HEXPAT, one layer; pure black laid exactly under the KOMBI's
- * boxes), a framed edge with travelling glints, and the owner's name as a small nameplate in the header
- * (intro.js NAME). The tach is a big flat-top HEXAGON with an instrument face (HEXLINE), a segmented ring
- * (HEXBAND: rim-lit edges, minor ticks, numerals with a soft halo inside on the hexagon's own edges, a bright
- * blade at the reading), the gear huge in the centre (a change slides the new gear in with a streak while the
- * old slides out: engine.js kick) and the drive mode in a lit pill. The fuel is a small hexagon gauge of the
- * same family with the pump icon in it, turning red on the reserve. Every other reading is a tile with an
- * expressive icon and a slim bar: coolant, oil, gearbox, boost and torque (petrol / diesel) or charge and power
- * (plug-in hybrid), timing or electric range, intake air or the battery's temperature. The welcome (intro.js)
- * and the rev alarm (alarm.js) are on; the alarm turns the hexagon red and its pill reads SHIFT.
+ * A dark hexagonal carbon weave dresses the panel (HEXPAT), a framed edge with travelling glints, the owner's
+ * name as a nameplate in the header. The tach is a big flat-top HEXAGON on the left: an instrument face
+ * (HEXLINE), a rim-lit segmented ring with the numerals inside on its own edges and a bright blade at the
+ * reading (HEXBAND), the gear huge in the centre (a change slides the new gear in with a streak: engine.js
+ * kick), the drive mode in a lit pill. The digital speed stands huge in the middle under the boxes, a column of
+ * icon tiles fills the gap between them, more tiles sit right of them, and TWO SMALL GAUGES of the same hexagon
+ * family carry the fuel (the pump, red on the reserve) and the coolant (the thermometer, its red zone at the
+ * hot end) - the owner's two must-haves. The welcome (intro.js) and the rev alarm (alarm.js) are on; the alarm
+ * turns the tach red and its pill reads SHIFT.
  */
 const C = require('./layout_common');
 const alarm = require('./alarm');
+
+/*
+ * The KOMBI's two boxes on this car, from the owner's calibration photo (Settings > Band grid): the numbers his
+ * boxes hid, mapped back to the grid's cells, land on the same rectangles the upstream repo measured as
+ * M_BOXES - box A over cell 1 into 4, box B small on the 2/3/5/6 corner - and nothing else (the gear bracket
+ * right of centre did NOT show on his photo; its zone x 1490-1652, y 271-442 is left as bare weave, nothing
+ * critical in it, in case it comes back in some state).
+ */
+const BOX_A = { x: 779, y: 275, w: 274, h: 120 };    /* 793-1039, 289-381 + margin */
+const BOX_B = { x: 1209, y: 314, w: 199, h: 106 };   /* 1223-1394, 328-406 + margin */
 
 const PALETTES = {
     // arancio: amber on black carbon
@@ -55,10 +64,9 @@ const evTxt = (t) => ({ color: [t.ev, 1], glow: [t.ev, 0.3] });
 const kwNow = (d) => (C.isNum(d.kw) ? d.kw : 0);
 const hot = (o) => (d) => alarm.over(o, d);
 
-/* ---------- the dressing: the carbon weave, the frame, the glow ---------- */
+/* ---------- the dressing ---------- */
 
-/** The carbon weave over the given rectangles (the pattern continuous: u_org), with pure black laid exactly on
- * the KOMBI's boxes (holes): they sit above the panel and vanish into it. */
+/** The carbon weave (the pattern continuous: u_org), with pure black laid exactly on the KOMBI's boxes. */
 function carbon(rects, holes) {
     return rects.map((r, i) => ({
         key: 'bg' + i, kind: 'hexpat', x: r.x, y: r.y, w: r.w, h: r.h,
@@ -68,15 +76,8 @@ function carbon(rects, holes) {
 }
 const glint = (key, x, y, w, h, phase) => ({ key, kind: 'glint', x, y, w, h,
     params: { u_line: [1.6, 0.22, 0.09, phase || 0], u_fade: [0.12] }, colors: (t) => ({ color: [t.rule, 1], glint: t.glint }) });
-const seg = (key, ax, ay, bx, by) => {
-    const pad = 14;
-    const x = Math.floor(Math.min(ax, bx) - pad), y = Math.floor(Math.min(ay, by) - pad);
-    return { key, kind: 'seg', x, y, w: Math.ceil(Math.max(ax, bx) + pad) - x, h: Math.ceil(Math.max(ay, by) + pad) - y,
-        params: { u_seg: [ax - x, ay - y, bx - x, by - y], u_w: [2, 6] }, colors: (t) => ({ color: [t.hexEdge, 1], glow: [t.accent, 0.3] }) };
-};
 const aura = (o, key, x, y, w, h) => ({ key, kind: 'aura', x, y, w, h, params: { u_aura: [0.3, 5] }, colors: (t) => ({ color: t.aura }),
     value: (d) => (C.isNum(d.speed) ? Math.min(1, C.speedIn(o, d.speed) / C.speedScale(o).max * 1.6) : 0), max: 1 });
-/* the owner's name (intro.js NAME), drawn into the cluster as a small nameplate */
 const NAME = require('./intro').NAME;
 const nameC = (t) => ({ color: [t.dim, 1], glow: [t.accent, 0.35] });
 function namePlate(x, y, w, h, lines) {
@@ -87,7 +88,6 @@ function namePlate(x, y, w, h, lines) {
 
 /* ---------- the hexagon gauges ---------- */
 
-/** The hexagon's layer: wide enough for the pointy sides, no taller than the ring needs. */
 const hexBox = (cx, cy, R, T) => {
     const hx = Math.ceil((R + T * 0.5 + 24) / 0.8660254), hy = R + Math.round(T * 0.5) + 30;
     return { x: cx - hx, y: cy - hy, w: hx * 2, h: hy * 2, hx, hy };
@@ -95,8 +95,8 @@ const hexBox = (cx, cy, R, T) => {
 const faceC = (isHot) => (t, d) => ({ color: [isHot && isHot(d) ? t.red : t.hexEdge, 1], glow: isHot && isHot(d) ? t.red : t.accent,
     face0: [t.faceTop, 1], face1: [t.faceBot, 1] });
 
-/** The tach: the instrument face and bezel, the rim-lit segmented ring (red while the rev alarm is on), the
- * gear with its change animation, the x1000 label and the mode pill (SHIFT while the alarm is on). */
+/** The tach: the face and bezel, the rim-lit segmented ring (red while the rev alarm is on), the gear with its
+ * change animation, the x1000 label and the mode pill (SHIFT while the alarm is on). */
 function hexTach(o, cx, cy, R, T) {
     const isHot = hot(o);
     const s = C.rpmScale(o);
@@ -129,34 +129,39 @@ function hexTach(o, cx, cy, R, T) {
     ];
 }
 
-const fuelFrac = (d) => (C.isNum(d.fuelPct) ? d.fuelPct / 100 : 0);
-const fuelLow = (d) => C.isNum(d.fuelPct) && d.fuelPct < 12;
-/** The fuel gauge: a small hexagon of the same family - the face, a segmented ring filled with the tank (red on
- * the reserve), the range in the middle and the pump under it. */
-function fuelHex(o, cx, cy, R, T) {
+/** A small gauge of the same family: the face and bezel, a segmented ring for value 0..1 (its red zone at
+ * redFrom, 2: none), a reading in the middle and its icon under it. */
+function miniHex(key, cx, cy, R, T, value, redFrom, text, textC, ic, ringC) {
     const b = hexBox(cx, cy, R, T);
     return [
-        { key: 'fuelBezel', kind: 'hexline', x: b.x, y: b.y, w: b.w, h: b.h,
-            params: { u_hex: [b.hx, b.hy, R + T * 0.5 + 8, 1.5], u_soft: [6] }, colors: faceC(fuelLow) },
+        { key: key + 'Bezel', kind: 'hexline', x: b.x, y: b.y, w: b.w, h: b.h,
+            params: { u_hex: [b.hx, b.hy, R + T * 0.5 + 8, 1.5], u_soft: [6] }, colors: faceC(null) },
         {
-            key: 'fuelHex', kind: 'hexband', x: b.x, y: b.y, w: b.w, h: b.h,
-            params: { u_geo: [b.hx, b.hy, R, T], u_span: [-132, 132, 22, 0.3], u_marks: [0, 0, 0, 0], u_red: [2] },
-            colors: (t, d) => (fuelLow(d) ? { track: t.track, fill0: '#6b0a08', fill1: t.red, redc: t.redc, tip: '#ffd9d0', tick: t.tick, num: t.num }
-                : { track: t.track, fill0: t.fill0, fill1: t.fill1, redc: t.redc, tip: t.tip, tick: t.tick, num: t.num }),
-            value: fuelFrac, max: 1, sweep: true,
+            key: key + 'Hex', kind: 'hexband', x: b.x, y: b.y, w: b.w, h: b.h,
+            params: { u_geo: [b.hx, b.hy, R, T], u_span: [-132, 132, 20, 0.3], u_marks: [0, 0, 0, 0], u_red: [redFrom] },
+            colors: ringC, value, max: 1, sweep: true,
         },
-        C.text('fuel', cx - Math.round(R * 0.8), cy - Math.round(R * 0.26), Math.round(R * 1.6), Math.round(R * 0.38),
-            (d) => C.distText(o, d.frange), (t, d) => (fuelLow(d) ? { color: [t.red, 1], glow: [t.red, 0.5] } : txt(t))),
-        icon('fuelIcon', cx - Math.round(R * 0.22), cy + Math.round(R * 0.2), Math.round(R * 0.44), 4),
+        C.text(key, cx - Math.round(R * 0.8), cy - Math.round(R * 0.3), Math.round(R * 1.6), Math.round(R * 0.4), text, textC),
+        icon(key + 'Icon', cx - Math.round(R * 0.21), cy + Math.round(R * 0.18), Math.round(R * 0.42), ic),
     ];
 }
+const fuelFrac = (d) => (C.isNum(d.fuelPct) ? d.fuelPct / 100 : 0);
+const fuelLow = (d) => C.isNum(d.fuelPct) && d.fuelPct < 12;
+/** The fuel gauge: filled with the tank, red on the reserve, the range and the pump in it. */
+const fuelHex = (o, cx, cy, R, T) => miniHex('fuel', cx, cy, R, T, fuelFrac, 2,
+    (d) => C.distText(o, d.frange), (t, d) => (fuelLow(d) ? { color: [t.red, 1], glow: [t.red, 0.5] } : txt(t)), 4,
+    (t, d) => (fuelLow(d) ? { track: t.track, fill0: '#6b0a08', fill1: t.red, redc: t.redc, tip: '#ffd9d0', tick: t.tick, num: t.num }
+        : { track: t.track, fill0: t.fill0, fill1: t.fill1, redc: t.redc, tip: t.tip, tick: t.tick, num: t.num }));
+/** The coolant gauge: 40-140 °C on the ring, its red zone at the hot end, the reading and the thermometer. */
+const heatHex = (o, cx, cy, R, T) => miniHex('coolant', cx, cy, R, T, (d) => C.tempFrac(d.coolant), 0.78,
+    (d) => C.tempText(o, d.coolant), (t, d) => ({ color: [C.isNum(d.coolant) && d.coolant >= 118 ? t.red : t.text, 1], glow: [t.accent, 0.12] }), 0,
+    (t) => ({ track: t.track, fill0: t.fill0, fill1: t.fill1, redc: t.redc, tip: t.tip, tick: t.tick, num: t.num }));
 
-/* ---------- the readings: tiles with expressive icons ---------- */
+/* ---------- the tiles ---------- */
 
 function icon(key, x, y, size, id) {
     return { key, kind: 'icon', x, y, w: size, h: size, params: { u_icon: [id], u_line: [0] }, colors: (t) => ({ color: [t.dim, 1] }) };
 }
-/** A slim segmented bar (hot mark at red 0..1; 2: none). */
 function slim(key, x, y, w, h, value, red, colours) {
     const b = C.bar(key, x, y, w, h, value, colours || ((t) => ({ track: t.track, fill0: t.fill0, fill1: t.fill1, redc: t.red, tip: t.tip, tick: t.dim, num: t.num })), 18);
     b.params = Object.assign({}, b.params, { u_red: [red === undefined ? 2 : red] });
@@ -185,19 +190,10 @@ const r2Of = (o) => (C.engineFocus(o)
 const r3Of = (o) => (C.engineFocus(o)
     ? { v: C.timingText, ic: 13, c: txt, f: undefined }
     : { v: (d) => C.erangeText(o, d), ic: 6, c: evTxt, f: C.focus.bar(o) });
-/** The intake air (the air) or the battery's temperature (the thermometer). */
-const t2Of = (o) => (C.engineFocus(o)
-    ? { v: (d) => C.tempText(o, d.iat), ic: 3 } : { v: (d) => C.tempText(o, d.battTemp), ic: 0 });
 const hotTemp = (which, redC) => (t, d) => ({ color: [C.isNum(d[which]) && d[which] >= redC ? t.red : t.text, 1], glow: [t.accent, 0.1] });
 const tempTile = (o, key, which, ic, x, y, w, redC) =>
     tile(key, ic, x, y, w, (d) => C.tempText(o, d[which]), hotTemp(which, redC), (d) => C.tempFrac(d[which]), (redC - 40) / 100);
-const temps = (o, x, gap, y, w) => [].concat(
-    tempTile(o, 'coolant', 'coolant', 0, x, y, w, 118),
-    tempTile(o, 'oil', 'oil', 1, x + gap, y, w, 130),
-    tempTile(o, 'gbox', 'gearbox', 2, x + gap * 2, y, w, 125));
 const speedDigits = (o, x, y, w, h, align) => C.text('speedDigits', x, y, w, h, (d) => C.speedText(o, d), big, { align: align === undefined ? 0.5 : align });
-const outsideTile = (o, x, y, w) => [C.text('outside', x, y, w, 34, (d) => C.outsideText(o, d.outside), txt, { align: 0 }),
-    C.text('outsideLbl', x, y + 38, w, 13, 'OUTSIDE', lbl, { align: 0, tracking: 0.14 })];
 const HOLES = [C.GEARBOX_HOLE, C.EDRIVE_HOLE];
 
 module.exports = require('./intro').withIntro(alarm.withAlarm({
@@ -208,36 +204,47 @@ module.exports = require('./intro').withIntro(alarm.withAlarm({
     needs: ['gearbox', 'splitRear', 'iat'],
 
     /*
-     * Built around what the glass and the KOMBI keep (layout_common; checked by tools/clearance.js): the hexagon
-     * under the camera's cowl and above the warning lights, pure black exactly under the KOMBI's boxes - and,
-     * with the boxes up (Boxes Always, the default here, or Auto in a SPORT mode), the whole middle band.
+     * One arrangement whatever the drive mode and the Boxes setting (the owner's ask): built round his two
+     * measured boxes, checked by tools/clearance.js against the M holes and the glass like every layout.
      */
     pieces(o) {
         if (o.bandGrid && o.centre !== 'map' && o.centre !== 'stock') return gridLayout(o);
         if (o.centre === 'map') return mapLayout(o);
         if (o.centre === 'stock') return stockLayout(o);
-        if (C.mCar(o)) return boxesLayout(o);
-        const r1 = r1Of(o), r2 = r2Of(o), r3 = r3Of(o);
-        return carbon([{ x: 0, y: 0, w: 1920, h: 720 }], HOLES).concat([
-            aura(o, 'aura', 660, 140, 600, 500),
-            glint('frameT', 250, 140, 1420, 5, 0), glint('frameB', 250, 644, 1420, 5, 0.5),
-            seg('cornTL', 250, 142, 190, 212), seg('cornTR', 1670, 142, 1730, 212),
-        ], namePlate(710, 150, 500, 20, false), hexTach(o, 960, 390, 186, 26), [
-            C.text('clock', 160, 152, 200, 38, C.clock, txt, { align: 0 }),
-            speedDigits(o, 150, 212, 490, 168, 1),
-            C.text('speedUnit', 440, 388, 200, 22, C.speedUnit(o), lbl, { align: 1, tracking: 0.3 }),
-        ], fuelHex(o, 292, 532, 72, 15),
-        tile('r1', r1.ic, 460, 470, 180, r1.v, r1.c, r1.f, undefined, r1.c2),
-        tempTile(o, 'coolant', 'coolant', 0, 1250, 170, 142, 118),
-        tempTile(o, 'oil', 'oil', 1, 1250, 300, 142, 130),
-        tempTile(o, 'gbox', 'gearbox', 2, 1250, 430, 142, 125),
-        [C.text('split', 1250, 560, 400, 24, C.splitText, lbl, { align: 0, tracking: 0.08 })],
-        tile('r2', r2.ic, 1676, 286, 224, r2.v, r2.c, r2.f, undefined, r2.c2),
-        outsideTile(o, 1714, 420, 190),
-        tile('r3', r3.ic, 1676, 540, 224, r3.v, r3.c, r3.f, undefined, evBar));
+        return cockpit(o);
     },
 }));
 
+/*
+ * The cockpit: the tach left; the speed huge in the middle under the boxes; a column of tiles in the gap
+ * between box A and box B (x 1056-1206); more tiles right of box B (x 1680+, under the eDrive box); the fuel
+ * and coolant gauges along the bottom right; the header with the time, the nameplate and the outside. The zone
+ * x 1490-1652, y 271-442 (the stock gear bracket's, absent on this car's photo) holds nothing critical.
+ */
+function cockpit(o) {
+    const r1 = r1Of(o), r2 = r2Of(o), r3 = r3Of(o);
+    return carbon([{ x: 0, y: 0, w: 1920, h: 720 }], [BOX_A, BOX_B, C.EDRIVE_HOLE]).concat([
+        aura(o, 'aura', 720, 404, 480, 236),
+        glint('frameT', 250, 132, 1420, 5, 0), glint('frameB', 250, 644, 1420, 5, 0.5),
+        C.text('clock', 156, 146, 200, 40, C.clock, txt, { align: 0 }),
+        C.text('outside', 1480, 152, 280, 28, (d) => C.outsideText(o, d.outside) + '  OUTSIDE', lbl, { align: 1, tracking: 0.05 }),
+    ], namePlate(700, 152, 520, 24, true), hexTach(o, 420, 400, 150, 22), [
+        // the speed, huge, under the boxes
+        speedDigits(o, 740, 428, 460, 172),
+        C.text('speedUnit', 740, 606, 460, 20, C.speedUnit(o), lbl, { tracking: 0.3 }),
+        // the split, small, under the tach's side
+        C.text('split', 156, 616, 420, 22, C.splitText, lbl, { align: 0, tracking: 0.06 }),
+        glint('vSep1', 1056, 262, 6, 148, 0.2), glint('vSep2', 1672, 272, 6, 158, 0.7),
+    ],
+    // the column between the boxes, and the column right of them
+    tile('r1', r1.ic, 1066, 266, 134, r1.v, r1.c, r1.f, undefined, r1.c2),
+    tile('r3', r3.ic, 1066, 352, 134, r3.v, r3.c, r3.f, undefined, evBar),
+    tile('r2', r2.ic, 1686, 282, 218, r2.v, r2.c, r2.f, undefined, r2.c2),
+    tempTile(o, 'gbox', 'gearbox', 2, 1686, 376, 218, 125),
+    // the owner's two gauges: the fuel and the coolant
+    fuelHex(o, 1500, 554, 54, 11),
+    heatHex(o, 1760, 554, 54, 11));
+}
 
 /*
  * The calibration grid (Settings > Band grid): the middle band divided into six numbered cells, 1-3 across the
@@ -269,35 +276,6 @@ function gridLayout(o) {
 }
 
 /*
- * The main arrangement (Boxes Always, the default - the KOMBI's boxes are up in every mode on this car; or Auto
- * in a SPORT mode): the middle band is a framed pure-black blade the boxes vanish into. The hexagon tach left of
- * it, the speed under it, the header above it with the nameplate, the fuel gauge and the tiles along the bottom.
- */
-function boxesLayout(o) {
-    const BAND = { x: 770, y: 256, w: 900, h: 206 };
-    const r1 = r1Of(o), r2 = r2Of(o), r3 = r3Of(o), t2 = t2Of(o);
-    return carbon([{ x: 0, y: 0, w: 1920, h: 720 }], [C.EDRIVE_HOLE]).concat([
-        C.flat('bgBand', BAND.x, BAND.y, BAND.w, BAND.h, () => '#000000'),
-        glint('bandT', 690, 250, 1070, 5, 0), glint('bandB', 690, 464, 1210, 5, 0.5),   // (bandT ends before the eDrive box)
-        aura(o, 'aura', 180, 170, 480, 450),
-    ], hexTach(o, 420, 392, 164, 24),
-    // the header: the time, outside and the split left, the owner's name in the middle, the temperatures right
-    [C.text('clock', 156, 138, 180, 40, C.clock, txt, { align: 0 }),
-        C.text('outside', 156, 186, 240, 22, (d) => C.outsideText(o, d.outside) + '  OUTSIDE', lbl, { align: 0, tracking: 0.05 }),
-        C.text('split', 156, 214, 300, 20, C.splitText, lbl, { align: 0, tracking: 0.06 })],
-    namePlate(700, 150, 520, 24, true),
-    temps(o, 1335, 145, 142, 126),
-    // under the band: the speed in the middle, the tiles right of it, the fuel gauge right of the gear box
-    [speedDigits(o, 700, 470, 480, 142),
-        C.text('speedUnit', 700, 618, 480, 20, C.speedUnit(o), lbl, { tracking: 0.3 })],
-    tile('r1', r1.ic, 1240, 478, 190, r1.v, r1.c, r1.f, undefined, r1.c2),
-    tile('r2', r2.ic, 1455, 478, 190, r2.v, r2.c, r2.f, undefined, r2.c2),
-    tile('r3', r3.ic, 1240, 570, 190, r3.v, r3.c, r3.f, undefined, evBar),
-    tile('t2', t2.ic, 1455, 570, 190, t2.v, txt),
-    fuelHex(o, 1788, 552, 58, 12));
-}
-
-/*
  * The map in the centre: the weave round the map window, glinting hairlines framing it (split round the cowl
  * and the gear box), a small hexagon tach left of it with the speed and the nameplate over it, the readings
  * right of it, the split under it.
@@ -323,7 +301,9 @@ function mapLayout(o) {
     tile('r1', r1.ic, 1682, 374, 222, r1.v, r1.c, r1.f, undefined, r1.c2),
     tile('r2', r2.ic, 1682, 466, 222, r2.v, r2.c, r2.f, undefined, r2.c2),
     [C.text('split', 560, y2 + 8, 800, 24, C.splitText, lbl, { tracking: 0.1 })],
-    temps(o, 1524, 130, 560, 110));
+    tempTile(o, 'coolantT', 'coolant', 0, 1524, 560, 110, 118),
+    tempTile(o, 'oil', 'oil', 1, 1654, 560, 110, 130),
+    tempTile(o, 'gbox', 'gearbox', 2, 1784, 560, 110, 125));
 }
 
 /* The stock centre (its content between x 566 and 1104): the hexagon tach and the speed left of it, the fuel
@@ -339,11 +319,12 @@ function stockLayout(o) {
         C.text('outside', 1340, 152, 220, 24, (d) => C.outsideText(o, d.outside) + '  OUTSIDE', lbl, { align: 0, tracking: 0.05 }),
         C.text('plate', 1120, 196, 640, 15, NAME, nameC, { tracking: 0.42 }),
         glint('ruleR0', 1120, 226, 640, 6, 0.4)],
-    // (an M display's second box reaches x 1208-1415, y 313-426 here: the gauge sits below it, the split
-    // beside it, the temperatures along the bottom right)
+    // (an M display's second box reaches x 1208-1415, y 313-426 here: the gauges sit below it)
     fuelHex(o, 1210, 556, 56, 12),
     tile('r2', r2.ic, 1680, 290, 224, r2.v, r2.c, r2.f, undefined, r2.c2),
     tile('r1', r1.ic, 1680, 404, 224, r1.v, r1.c, r1.f, undefined, r1.c2),
     [C.text('split', 1450, 486, 300, 24, C.splitText, lbl, { align: 0, tracking: 0.08 })],
-    temps(o, 1340, 170, 556, 150));
+    tempTile(o, 'coolantT', 'coolant', 0, 1340, 556, 150, 118),
+    tempTile(o, 'oil', 'oil', 1, 1510, 556, 150, 130),
+    tempTile(o, 'gbox', 'gearbox', 2, 1680, 556, 150, 125));
 }
