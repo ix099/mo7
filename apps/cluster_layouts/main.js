@@ -92,6 +92,7 @@ mgu.run({
             theme: () => themeNow(),
             enabled: showing,
             sweep: () => settings.get('sweep') !== 'off',
+            intro: () => settings.get('welcome') !== 'off',
             target: 'panel',
             onFresh: D.onFresh,
         });

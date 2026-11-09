@@ -764,4 +764,263 @@ void main() {
     gl_FragColor = vec4(a > 0.0 ? min(col / max(a, 0.001), vec3(1.0)) : vec3(0.0), a);
 }`;
 
-module.exports = { HIGHP, COMMON, GLYPH, FLAT_FS, PANEL_FS, DIAL_FS, BAND_FS, TEXT_FS, BG_FS, ICON_FS, SPARK_FS, CAR_FS, LEDS_FS, FLAG_FS, EAGLE_FS, FIREWORKS_FS };
+/*
+ * Kenawy (layout_kenawy.js): three small animated pieces, each on the renderer's own clock (u_time), so nothing
+ * is sent to move them. Small and loop-free, each over only its own rectangle.
+ */
+
+/**
+ * The light blade: engine speed as a long tapered segmented bar (thin at the left, full at the right), the lit
+ * part in a gradient brighter towards its tip, a sheen running along it, a spark at the tip, red from u_red; at
+ * the shift point (from 4 % before the red zone) the lit part pulses red. Major marks and numerals under it.
+ *   u_geo     segments, gap (of a segment), thickness px, major marks (the scale's end: 0..n numerals; 0 none)
+ *   u_lab     numeral height px (0 none), numerals' centre y px, the bar's centre y px, inset px at each end
+ *   u_value   0..1
+ */
+const BLADE_FS = `#version 100
+${HIGHP}${COMMON}${GLYPH}
+uniform vec2 u_size;
+uniform highp float u_time;
+uniform vec4 u_geo;
+uniform vec4 u_lab;
+uniform float u_value;
+uniform float u_red;
+uniform float u_digit_adv;
+uniform vec3 u_track;
+uniform vec3 u_fill0;
+uniform vec3 u_fill1;
+uniform vec3 u_redc;
+uniform vec3 u_tip;
+uniform vec3 u_num;
+varying vec2 v_uv;
+void main() {
+    vec2 p = v_uv * u_size;
+    float x0 = u_lab.w, len = u_size.x - 2.0 * x0, t = (p.x - x0) / len, cy = u_lab.z, T = u_geo.z;
+    float v = clamp(u_value, 0.0, 1.0), on = v > 0.003 ? 1.0 : 0.0;
+    vec4 acc = vec4(0.0);
+    float th = T * (0.4 + 0.6 * clamp(t, 0.0, 1.0));
+    float dy = abs(p.y - cy), inX = span(p.x, x0, x0 + len);
+    float body = clamp(th * 0.5 - dy + 0.5, 0.0, 1.0) * inX;
+    float seg = 1.0;
+    if (u_geo.x > 0.0) { float sl = len / u_geo.x, sx = mod(p.x - x0, sl), g = sl * u_geo.y * 0.5; seg = span(sx, g, sl - g); }
+    float red = t >= u_red ? 1.0 : 0.0;
+    float shift = v >= u_red - 0.04 ? 1.0 : 0.0;
+    float pulse = 0.5 + 0.5 * sin(u_time * 14.0);
+    float lit = clamp((v - t) * len + 0.5, 0.0, 1.0) * on;
+    vec3 fc = mix(mix(u_fill0, u_fill1, clamp(t / max(v, 0.001), 0.0, 1.0)), u_redc, red);
+    /* the glow round the lit part */
+    float gd = max(dy - th * 0.5, 0.0);
+    acc = over(acc, fc, exp(-gd * gd / (T * T * 0.7)) * (dy > th * 0.5 ? 1.0 : 0.0) * lit * inX * (0.32 + 0.45 * shift * pulse));
+    acc = over(acc, u_track * (1.0 + 0.7 * red), body * seg);
+    /* the lit segments, brighter near the tip, a sheen running along them */
+    float near = clamp(1.0 - (v - t) * 5.0, 0.0, 1.0);
+    vec3 c = fc * (0.7 + 0.5 * near);
+    float z = (t - (fract(u_time * 0.32) * 1.5 - 0.25) * v) / 0.04;
+    c += vec3(1.0) * exp(-z * z) * 0.4;
+    c = mix(c, u_redc * 1.15, shift * pulse * 0.65);
+    acc = over(acc, c, body * seg * lit);
+    /* the spark at the tip */
+    vec2 tq = vec2(p.x - (x0 + len * v), (p.y - cy) * 1.8);
+    acc = over(acc, u_tip, exp(-dot(tq, tq) / (T * T * 0.8)) * 0.9 * on);
+    /* major marks and numerals under the bar */
+    if (u_geo.w > 0.0) {
+        float m = floor(clamp(t, 0.0, 1.0) * u_geo.w + 0.5), mx = x0 + len * m / u_geo.w;
+        vec3 mc = m / u_geo.w >= u_red - 0.001 ? u_redc : u_num;
+        float ty = cy + T * 0.5 + 5.0;
+        acc = over(acc, mc, clamp(1.2 - abs(p.x - mx) + 0.5, 0.0, 1.0) * span(p.y, ty, ty + 7.0) * 0.8);
+        if (u_lab.x > 0.0) {
+            float h = u_lab.x, adv = u_digit_adv, n = m >= 9.5 ? 2.0 : 1.0;
+            vec2 q = vec2(p.x - mx, p.y - (u_lab.y - h * 0.5)) / h;
+            float xx = q.x + n * adv * 0.5, i = floor(xx / adv);
+            if (i >= 0.0 && i < n) {
+                float s = sdf(digitOf(m, i, n), vec2(xx - (i + 0.5) * adv, q.y));
+                acc = over(acc, mc, smoothstep(0.5 - 2.0 / h, 0.5 + 2.0 / h, s));
+            }
+        }
+    }
+    gl_FragColor = acc;
+}`;
+
+/**
+ * A hairline (vertical when the layer is taller than wide) with a glint of light travelling along it,
+ * fading out towards its ends.
+ *   u_line    thickness px, glints a second, the glint's length (of the line), phase 0..1
+ *   u_fade    the fade at each end (of the line; 0: none)
+ */
+const GLINT_FS = `#version 100
+${HIGHP}${COMMON}
+uniform vec2 u_size;
+uniform highp float u_time;
+uniform vec4 u_line;
+uniform float u_fade;
+uniform vec4 u_color;
+uniform vec3 u_glint;
+varying vec2 v_uv;
+void main() {
+    vec2 p = v_uv * u_size;
+    float vert = u_size.y > u_size.x ? 1.0 : 0.0;
+    float L = mix(u_size.x, u_size.y, vert), a = mix(p.x, p.y, vert), b = mix(p.y - u_size.y * 0.5, p.x - u_size.x * 0.5, vert);
+    float t = a / L;
+    float fade = u_fade > 0.0 ? smoothstep(0.0, u_fade, t) * smoothstep(1.0, 1.0 - u_fade, t) : 1.0;
+    float line = clamp(u_line.x * 0.5 - abs(b) + 0.5, 0.0, 1.0);
+    float z = (t - (fract(u_time * u_line.y + u_line.w) * 1.6 - 0.3)) / max(u_line.z, 0.01);
+    float g = exp(-z * z);
+    vec4 acc = vec4(0.0);
+    acc = over(acc, u_glint, exp(-b * b / (u_line.x * u_line.x * 5.0 + 1.0)) * g * 0.55 * fade);
+    acc = over(acc, mix(u_color.rgb, u_glint, g), line * fade * max(u_color.a, g));
+    gl_FragColor = acc;
+}`;
+
+/**
+ * A soft glow (an ellipse filling the layer) breathing slowly, stronger with u_value (0..1: the speed).
+ *   u_aura    strength 0..1, a breath in seconds
+ */
+const AURA_FS = `#version 100
+${HIGHP}
+uniform vec2 u_size;
+uniform highp float u_time;
+uniform vec4 u_aura;
+uniform float u_value;
+uniform vec3 u_color;
+varying vec2 v_uv;
+void main() {
+    vec2 q = (v_uv - 0.5) * 2.0;
+    float r2 = dot(q, q);
+    float breath = 0.82 + 0.18 * sin(u_time * 6.2831853 / max(u_aura.y, 0.5));
+    float a = exp(-r2 * 2.6) * (1.0 - smoothstep(0.7, 1.0, r2)) * u_aura.x * breath * (0.55 + 0.45 * clamp(u_value, 0.0, 1.0));
+    gl_FragColor = vec4(u_color, a);
+}`;
+
+/*
+ * The welcome (intro.js): played once when the layout comes up with the car standing, on one number, u_prog
+ * 0..1, that the cluster animates itself over the intro (engine.js: one animate, nothing sent while it plays).
+ * u_win: when a piece comes in (x..y) and goes (z..w), as fractions of the intro.
+ */
+
+/** The veil: black over the whole panel with a faint glow of the accent behind the emblem, lifted at the end. */
+const VEIL_FS = `#version 100
+${HIGHP}
+uniform vec2 u_size;
+uniform float u_prog;
+uniform vec4 u_win;
+uniform vec4 u_centre;             /* the glow's centre px, its radius px, strength */
+uniform vec3 u_glow;
+varying vec2 v_uv;
+void main() {
+    vec2 d = (v_uv * u_size - u_centre.xy) / u_centre.z;
+    float g = exp(-dot(d, d) * 1.6) * u_centre.w * smoothstep(u_win.x, u_win.y, u_prog);
+    float a = 1.0 - smoothstep(u_win.z, u_win.w, u_prog);
+    gl_FragColor = vec4(u_glow * g, a);
+}`;
+
+/**
+ * The emblem: a roundel drawn in. The outer ring sweeps round, the letters fade in on it, the quartered centre
+ * spins and grows into place, a glint crosses it, a soft halo round it; then it fades.
+ *   u_codes   the three letters' glyph codes; u_lett: their angles (deg, the middle one at 0) and size (of R)
+ */
+const EMBLEM_FS = `#version 100
+${HIGHP}${COMMON}${GLYPH}
+uniform vec2 u_size;
+uniform float u_prog;
+uniform vec4 u_win;
+uniform vec3 u_codes;
+uniform vec2 u_lett;
+uniform vec3 u_blue;
+uniform vec3 u_white;
+uniform vec3 u_ringc;
+uniform vec3 u_metal;
+uniform vec3 u_letter;
+uniform vec3 u_glow;
+varying vec2 v_uv;
+float letter(vec2 p, float code, float a, float Rl, float h) {
+    vec2 c = Rl * vec2(sin(a), -cos(a));
+    vec2 q = p - c;
+    vec2 g = vec2(dot(q, vec2(cos(a), sin(a))), dot(q, vec2(-sin(a), cos(a)))) / h + vec2(0.0, 0.5);
+    return smoothstep(0.5 - 1.5 / h, 0.5 + 1.5 / h, sdf(code, g));
+}
+void main() {
+    vec2 p = (v_uv - 0.5) * u_size;
+    float R = u_size.x * 0.5 * 0.84, r = length(p), px = 1.0;
+    float k = clamp((u_prog - u_win.x) / max(u_win.y - u_win.x, 0.001), 0.0, 1.0);
+    float fade = 1.0 - smoothstep(u_win.z, u_win.w, u_prog);
+    float ang = atan(p.x, -p.y) / DEG;                    /* 0 at the top, clockwise */
+    float a360 = ang < 0.0 ? ang + 360.0 : ang;
+    vec4 acc = vec4(0.0);
+    /* the halo */
+    float ho = max(r - R, 0.0) / (R * 0.09);
+    acc = over(acc, u_glow, exp(-ho * ho) * 0.6 * smoothstep(0.2, 0.7, k) * (r > R ? 1.0 : 0.0) * (1.0 - smoothstep(R * 1.12, u_size.x * 0.5 - 1.0, r)));
+    /* the outer ring, swept round */
+    float swept = clamp((360.0 * smoothstep(0.0, 0.42, k) - a360) * DEG * r + 0.5, 0.0, 1.0);
+    float Ri = R * 0.64;
+    float ring = span(r, Ri, R) * swept;
+    acc = over(acc, u_ringc, ring);
+    acc = over(acc, u_metal, (clamp(1.4 - abs(r - R + 1.0), 0.0, 1.0) + clamp(1.2 - abs(r - Ri), 0.0, 1.0)) * swept);
+    /* the letters */
+    float lk = smoothstep(0.32, 0.6, k), h = R * u_lett.y, Rl = (R + Ri) * 0.5;
+    float ink = max(max(letter(p, u_codes.x, -u_lett.x * DEG, Rl, h), letter(p, u_codes.y, 0.0, Rl, h)), letter(p, u_codes.z, u_lett.x * DEG, Rl, h));
+    acc = over(acc, u_letter, ink * lk * span(r, Ri, R));
+    /* the quartered centre, spun and grown into place */
+    float sk = smoothstep(0.3, 0.82, k);
+    float rot = (1.0 - sk) * -2.6, sc = mix(0.15, 1.0, sk);
+    vec2 q = vec2(p.x * cos(rot) - p.y * sin(rot), p.x * sin(rot) + p.y * cos(rot));
+    float rc = Ri - 2.0;
+    float disc = clamp(rc * sc - r + 0.5, 0.0, 1.0) * (sk > 0.001 ? 1.0 : 0.0);
+    float blue = q.x * q.y > 0.0 ? 1.0 : 0.0;
+    vec3 qc = mix(u_white, u_blue, blue);
+    qc = mix(qc, u_metal * 0.6, clamp(1.0 - min(abs(q.x), abs(q.y)) / 1.2, 0.0, 1.0) * 0.6);
+    qc *= 0.88 + 0.12 * (1.0 - r / R);
+    acc = over(acc, qc, disc);
+    /* the glint, across once */
+    float gp = mix(-1.3, 1.3, smoothstep(0.72, 0.98, k));
+    float gd = (p.x + p.y) / (R * 1.4142) - gp;
+    acc.rgb += vec3(1.0) * exp(-gd * gd / 0.004) * 0.55 * (r < R ? 1.0 : 0.0) * acc.a;
+    gl_FragColor = vec4(acc.rgb, acc.a * fade);
+}`;
+
+/**
+ * A line of glyphs revealed from the left by a moving edge of light (TEXT_FS's glyphs), then faded.
+ */
+const REVEAL_FS = `#version 100
+${HIGHP}${GLYPH}
+uniform vec2 u_size;
+uniform vec4 u_text[8];
+uniform vec4 u_x[8];
+uniform vec4 u_color;
+uniform vec4 u_glow;
+uniform float u_prog;
+uniform vec4 u_win;
+uniform vec3 u_edge;
+varying vec2 v_uv;
+void main() {
+    float h = u_size.y;
+    float x = v_uv.x * u_size.x / h;
+    float best = 1e4, code = -1.0, cx = 0.0, best2 = 1e4, code2 = -1.0, cx2 = 0.0;
+    for (int i = 0; i < 8; i++) {
+        vec4 c = u_x[i], k = u_text[i];
+        for (int j = 0; j < 4; j++) {
+            float cj = j == 0 ? c.x : j == 1 ? c.y : j == 2 ? c.z : c.w;
+            float kj = j == 0 ? k.x : j == 1 ? k.y : j == 2 ? k.z : k.w;
+            float dj = abs(x - cj);
+            if (dj < best) { best2 = best; code2 = code; cx2 = cx; best = dj; code = kj; cx = cj; }
+            else if (dj < best2) { best2 = dj; code2 = kj; cx2 = cj; }
+        }
+    }
+    float s = max(sdf(code, vec2(x - cx, v_uv.y)), sdf(code2, vec2(x - cx2, v_uv.y)));
+    float ink = smoothstep(0.5 - 2.0 / h, 0.5 + 2.0 / h, s);
+    float halo = smoothstep(0.18, 0.5, s) * (1.0 - ink) * u_glow.a;
+    float px = v_uv.x * u_size.x;
+    float edge = mix(-0.08, 1.08, smoothstep(u_win.x, u_win.y, u_prog)) * u_size.x;
+    float shown = clamp((edge - px) / (h * 0.6), 0.0, 1.0);
+    float ez = (px - edge) / (h * 0.35);
+    float flash = exp(-ez * ez) * step(u_win.x, u_prog) * (1.0 - smoothstep(u_win.y - 0.03, u_win.y, u_prog));
+    float fade = 1.0 - smoothstep(u_win.z, u_win.w, u_prog);
+    float a = (ink * u_color.a + halo * 0.7) * shown;
+    vec3 c = a > 0.0 ? (u_color.rgb * ink * u_color.a + u_glow.rgb * halo * 0.7) / max(ink * u_color.a + halo * 0.7, 0.001) : u_color.rgb;
+    c = mix(c, u_edge, clamp(flash * 1.2, 0.0, 1.0));
+    /* the edge itself: a thin upright line of light while it moves */
+    float line = exp(-ez * ez * 30.0) * flash * 0.9;
+    float aa = clamp(a + line * (1.0 - a), 0.0, 1.0);
+    gl_FragColor = vec4(mix(u_edge, c, a / max(aa, 0.001)), aa * fade);
+}`;
+
+module.exports = { HIGHP, COMMON, GLYPH, FLAT_FS, PANEL_FS, DIAL_FS, BAND_FS, TEXT_FS, BG_FS, ICON_FS, SPARK_FS, CAR_FS, LEDS_FS, FLAG_FS, EAGLE_FS, FIREWORKS_FS, BLADE_FS, GLINT_FS, AURA_FS, VEIL_FS, EMBLEM_FS, REVEAL_FS };

@@ -17,7 +17,7 @@
  * layer is hidden, the service releases the panel and the stock gauges are back.
  *
  * A piece (layout_*.js pieces(o)):
- *   { key, kind: 'flat' | 'panel' | 'dial' | 'band' | 'text' | 'bg' | 'icon' | 'spark' | 'car' | 'leds', x, y, w, h, z,
+ *   { key, kind: 'flat' | 'panel' | 'dial' | 'band' | 'text' | 'bg' | 'icon' | 'spark' | 'car' | 'leds' | 'blade' | 'glint' | 'aura', x, y, w, h, z,
  *     params: { u_name: [numbers] }       fixed uniforms (sent once),
  *     colors(t, d) -> { name: '#rrggbb' | ['#rrggbb', a] }   sent as u_<name> (vec3, or vec4 with a) when they change,
  *     value(d) -> number, max             dial: the reading on its scale (max: the scale's end); band: 0..1,
@@ -26,6 +26,8 @@
  *     dyn(d, t) -> { u_name: [numbers] }  more uniforms, sent when they change (at the text rate),
  *     sample(d) -> 0..1, every            a trend line's samples (kind spark), every `every` ms (2 s),
  *     time: true                          u_time from the renderer's clock (car and leds always),
+ *     intro: true                         part of the welcome: built only while it plays, its u_prog animated 0..1
+ *                                         over the layout's introMs, then dropped (layout.introMs, opts.intro()),
  *     text: 'fixed' | (d, t) -> string, align (0 left .. 1 right), tracking (glyph heights)   texts }
  *
  * One small shader per piece, each over only its own rectangle: the shaders the KOMBI is known to run. (One
@@ -43,15 +45,20 @@ const TAU_MS = 30;           // a needle's easing towards its reading: smooth be
 const MIN_GAP_MS = 4;        // a reading's update at most this soon after the last
 const EPS = 0.0015;          // a value moving less than this (of its max) is not sent
 const SWEEP_MS = 700;        // up, then as long back down
-const FS = { flat: SH.FLAT_FS, panel: SH.PANEL_FS, dial: SH.DIAL_FS, band: SH.BAND_FS, text: SH.TEXT_FS, bg: SH.BG_FS, icon: SH.ICON_FS, spark: SH.SPARK_FS, car: SH.CAR_FS, leds: SH.LEDS_FS, flag: SH.FLAG_FS, eagles: SH.EAGLE_FS, fireworks: SH.FIREWORKS_FS };
-const Z = { flag: -210, bg: -200, fireworks: -190, eagles: -180, flat: -100, panel: -50, spark: -20, band: 0, dial: 0, car: 0, leds: 0, text: 20, icon: 20 };
+const FS = { flat: SH.FLAT_FS, panel: SH.PANEL_FS, dial: SH.DIAL_FS, band: SH.BAND_FS, text: SH.TEXT_FS, bg: SH.BG_FS, icon: SH.ICON_FS, spark: SH.SPARK_FS, car: SH.CAR_FS, leds: SH.LEDS_FS, flag: SH.FLAG_FS, eagles: SH.EAGLE_FS, fireworks: SH.FIREWORKS_FS, blade: SH.BLADE_FS, glint: SH.GLINT_FS, aura: SH.AURA_FS, veil: SH.VEIL_FS, emblem: SH.EMBLEM_FS, reveal: SH.REVEAL_FS };
+const Z = { flag: -210, bg: -200, fireworks: -190, eagles: -180, aura: -150, flat: -100, glint: -40, blade: 0, panel: -50, spark: -20, band: 0, dial: 0, car: 0, leds: 0, text: 20, icon: 20, veil: 200, emblem: 210, reveal: 220 };
 /* kinds that animate on the renderer's own clock (u_time): nothing is sent to move them */
-const TIMED = { car: true, leds: true, flag: true, eagles: true, fireworks: true };
+const TIMED = { car: true, leds: true, flag: true, eagles: true, fireworks: true, blade: true, glint: true, aura: true };
 const HIST = 64;
 /* the most layers up at once while one set replaces another (the service allows 64 an app) */
 const MAX_AT_ONCE = 60;
 /* car data gone for this long before the layout hides (a moment's gap would drop and resend every layer) */
-const LIVE_GRACE_MS = 1500;                 // a trend line's samples
+const LIVE_GRACE_MS = 1500;
+/* the welcome (a layout's intro pieces, intro.js): played when the layout comes up with the car standing, once,
+ * and again only after the layout was off this long (the car parked); never while moving: it ends at once from
+ * INTRO_STOP_KMH */
+const INTRO_AGAIN_MS = 10 * 60 * 1000;
+const INTRO_STOP_KMH = 6;                 // a trend line's samples
 
 /**
  * startCluster(opts) -> { rebuild(), recolour(), stop(), status() }
@@ -69,6 +76,7 @@ function startCluster(opts) {
     // stock map in Map view while a layer wants it (contend)
     const TARGET = opts.target || 'panel', contend = !!opts.contend, zShift = opts.z || 0;
     let specs = [], pieces = [], fontRef = 0, fontFam = null, shown = false, built = false, sweepEnd = 0, group = opts.group || null;
+    let introUntil = 0, introSeen = false, hiddenAt = 0, sweepAt = 0;
     /* only the active group's pieces (a page) are built; pieces without a group always */
     const inGroup = (p) => !p.spec.group || p.spec.group === group;
     const hist = new Map();          // trend lines' samples by piece key, kept across pages and rebuilds
@@ -129,7 +137,7 @@ function startCluster(opts) {
         pieces = kept.slice();
         refusedRefs.clear(); state.refused = '';
         if (!keep) specs = withCredit(L.pieces(o));
-        const want = specs.filter((s) => (!s.group || s.group === group) && !(keep && !s.group));
+        const want = specs.filter((s) => (!s.group || s.group === group) && !(keep && !s.group) && (!s.intro || introUntil > Date.now()));
         if (old.length + kept.length + want.length > MAX_AT_ONCE) {
             const anchor = kept.length ? null : old[0];
             old.forEach((p) => { if (p !== anchor) cr.drop(p.ref); });
@@ -142,13 +150,14 @@ function startCluster(opts) {
             if (!ref) { warnOnce('piece ' + s.key + ' refused here'); return; }
             const p = { ref, spec: s, colours: '', text: null, value: 0, sent: -1, anim: 0, dyn: '', histSent: -1 };
             if (s.kind !== 'flat') cr.uniform(ref, 'u_size', [s.w, s.h]);
-            if (s.kind === 'dial' || s.kind === 'band' || s.kind === 'text') {
+            if (s.kind === 'dial' || s.kind === 'band' || s.kind === 'text' || s.kind === 'blade' || s.kind === 'reveal' || s.kind === 'emblem') {
                 cr.bind(ref, 'u_font', fontRef);
                 cr.uniform(ref, 'u_font_cells', fontCells());
                 cr.uniform(ref, 'u_digit_adv', [Math.round(font.digitAdvance(fam()) * 1000) / 1000]);
             }
             Object.keys(s.params || {}).forEach((u) => cr.uniform(ref, u, s.params[u]));
             if (s.value) cr.uniform(ref, 'u_value', [0]);
+            if (s.intro) cr.uniform(ref, 'u_prog', [0]);
             pieces.push(p);
         });
         old.forEach((p) => cr.drop(p.ref));
@@ -184,7 +193,7 @@ function startCluster(opts) {
                     cr.uniform(p.ref, 'u_count', [H.list.length]);
                 }
             }
-            if (s.kind === 'text') {
+            if (s.kind === 'text' || s.kind === 'reveal') {
                 const txt = typeof s.text === 'function' ? String(s.text(d, t)) : String(s.text);
                 if (force || txt !== p.text) {
                     p.text = txt;
@@ -251,12 +260,23 @@ function startCluster(opts) {
     function setShown(on) {
         if (on === shown) return;
         if (on) {
+            // the welcome: wanted, the layout has one, the car standing, not seen since the car was last parked
+            const now = Date.now(), L = opts.layout(), d = opts.data() || {};
+            const ms = L && L.introMs, again = !introSeen || (hiddenAt && now - hiddenAt > INTRO_AGAIN_MS);
+            introUntil = ms && opts.intro && opts.intro() && again && !(Number(d.speed) > INTRO_STOP_KMH / 2) ? now + ms : 0;
             build();
             shown = true;
             pieces.forEach((p) => cr.set(p.ref, { visible: true }));
-            if (!opts.sweep || opts.sweep()) sweep();
+            const sweepOn = !opts.sweep || opts.sweep();
+            if (introUntil) {
+                introSeen = true;
+                pieces.forEach((p) => { if (p.spec.intro) cr.animate(p.ref, { property: 'uniform', name: 'u_prog', keys: '0:0 ' + ms + ':1', loop: false }); });
+                // the needles sweep as the veil lifts
+                sweepAt = sweepOn ? now + Math.round(ms * 0.8) : 0;
+            } else if (sweepOn) sweep();
         } else {
             endSweep();
+            introUntil = 0; sweepAt = 0; hiddenAt = Date.now();
             shown = false;
             pieces.forEach((p) => cr.drop(p.ref));
             pieces = []; built = false;
@@ -276,13 +296,22 @@ function startCluster(opts) {
         if (Date.now() - statusAt > 3000) { statusAt = Date.now(); try { cr.status(); } catch (e) { /* not connected yet */ } }
         if (!want) { const now = Date.now(); if (now - lastText >= 1000 / TEXT_HZ) { lastText = now; samples(); } return; }
         if (sweepEnd && Date.now() >= sweepEnd) endSweep();
+        if (introUntil && (Date.now() >= introUntil || Number((opts.data() || {}).speed) > INTRO_STOP_KMH)) endIntro();
+        if (sweepAt && Date.now() >= sweepAt) { sweepAt = 0; sweep(); }
         values();
         const now = Date.now();
         if (now - lastText >= 1000 / TEXT_HZ) { lastText = now; samples(); update(false); }
     }
 
+    /** The welcome over (its time up, or the car moving): its layers dropped, the layout as it is. */
+    function endIntro() {
+        introUntil = 0;
+        if (sweepAt && Date.now() < sweepAt) sweepAt = 0;    // cut short (moving): no sweep after it
+        pieces = pieces.filter((p) => { if (p.spec.intro) { cr.drop(p.ref); return false; } return true; });
+    }
+
     /** The pieces made again (the options changed); the glyph atlas stays. */
-    function rebuild() { specs = withCredit(opts.layout().pieces(opts.options())); if (built) { endSweep(); build(); } }
+    function rebuild() { if (introUntil) endIntro(); specs = withCredit(opts.layout().pieces(opts.options())); if (built) { endSweep(); build(); } }
     /** Another group (page): its pieces built, the new page up before the old one goes. */
     function setGroup(g) {
         if (g === group) return;

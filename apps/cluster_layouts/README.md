@@ -3,8 +3,8 @@
 *Part of [iDrive 7 cluster apps](../../README.md), with Cluster Info and [Cluster Centre](../cluster_centre/README.md).*
 
 Custom layouts for the whole instrument cluster of a BMW with iDrive 7 (MGU), **drawn by the cluster
-itself**. Seven original layouts (Analog sport, Digital round, Modern wide, Digital dash, Freedom, Retro and
-Track), each in comfort, sport and efficient colours (following the selector's S / M
+itself**. Nine original layouts (Analog sport, Digital round, Modern wide, Digital dash, Freedom, Retro,
+Track, Apex and Kenawy), each in comfort, sport and efficient colours (following the selector's S / M
 programme, or chosen), each with three centres: the **readings**, the **map** (Waze or the stock map shows in
 the middle), or the **stock** centre content.
 
@@ -104,6 +104,48 @@ the drive) and the drive's peak power (or boost), and the ranges and charge righ
 | Sport colours at the shift point |
 |---|
 | ![](../../docs/track_sport.png) |
+
+### Apex (supercar)
+
+A big rev counter in the middle, analog and digital together: an analog face and needle, a segmented LED ring
+round it that turns red at the red zone, and a dark centre disc the needle comes out from with the **digital speed
+large in it** and the gear under it. Long arcs frame the cluster (road speed on the left, power on the right),
+small analog oil and coolant dials with their digits, the drive mode in a lit badge. With the map in the centre
+the map window gets a lit frame and the rev counter moves left of it. With Settings > Cluster: M car everything
+moves out of the band of the M KOMBI's boxes, so they vanish into the black.
+
+![Apex](../../docs/apex_sport.png)
+
+| Map in the centre | M car |
+|---|---|
+| ![](../../docs/apex_map.png) | ![](../../docs/apex_mcar.png) |
+
+### Kenawy (digital luxury, animated)
+
+All digital and alive on the cluster's own clock (`shaders.js`: `BLADE_FS`, `GLINT_FS`, `AURA_FS`; nothing is
+sent to animate them): a light blade across the top for the engine speed (a sheen running along it, a spark at
+its tip, pulsing red at the shift point), the speed huge in the middle over a slowly breathing glow, hairlines
+with travelling glints, the gear in its own chip, the drive mode in a lit badge. Champagne gold (comfort),
+crimson (sport), jade (efficient). With the map in the centre the map is framed by glinting hairlines and the
+blade runs under it.
+
+![Kenawy](../../docs/kenawy.png)
+
+| Sport colours | Map in the centre |
+|---|---|
+| ![](../../docs/kenawy_sport.png) | ![](../../docs/kenawy_map.png) |
+
+### The welcome (Apex and Kenawy)
+
+When the cluster comes up with the car standing: a black veil, the emblem drawn in (its ring sweeping round,
+the letters, the quartered centre spinning into place, a glint) and WELCOME with the owner's name revealed by an
+edge of light; then it fades and the needles sweep (`intro.js`, `engine.js`; one number the cluster animates
+itself). Once, and again only after the car was parked for 10 minutes; never while moving (it ends at once
+from 6 km/h). Settings > Welcome turns it off; the name is `NAME` in `intro.js`.
+
+| Welcome | M car |
+|---|---|
+| ![](../../docs/welcome.png) | ![](../../docs/welcome_mcar.png) |
 
 *(Drawn by `tools/preview.js` from the same shaders the cluster runs; the map is a stand-in for the real one.)*
 
