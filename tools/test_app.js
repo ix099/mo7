@@ -33,7 +33,7 @@ const check = (name, fn) => { fn(); ok++; console.log('ok   ' + name); };
     const S = {}, changes = [];
     SPEC.settings.forEach((s) => { S[s.key] = s.default; });
     // (written for these settings; this fork's own defaults are for an X5 xDrive40i: Mo7, km/h, °C, petrol)
-    Object.assign(S, { layout: 'analog_sport', speedUnit: 'mph', tempUnit: 'f', vehicle: 'auto', cluster: 'standard', clock: '12', timeZone: 'eastern' });
+    Object.assign(S, { layout: 'analog_sport', speedUnit: 'mph', tempUnit: 'f', vehicle: 'auto', cluster: 'never', clock: '12', timeZone: 'eastern' });
     const handlers = {}, clicks = {}, warns = [];
     let pages = 0;
     const ctx = {

@@ -133,11 +133,21 @@ vanish into pure black, so Toro cuts its carbon weave round every box and lays e
 mode is on (the layout is redrawn when the mode changes, logged): the band becomes a framed black blade across
 the design, the hexagon moves left of it and the speed under it. 'Always' and 'Never' are manual overrides.
 
-Truly removing the boxes is the KOMBI's business, not an app's: see "The rev alarm" below for what stays ours,
-and the repo's issue notes - the `cluster-render` service already hides the stock CarPlay maneuver box this way
-(its **guide hold**: an empty 16x16 scene held in the box's slot, 0x105 / 0x103), so if the sport readouts are
-slot-mapped too (the renderer's slot report on **Signals page 2** says, photographed in COMFORT and in SPORT),
-the same hold extended to the `panel` target removes them for real.
+Truly removing the two sport readouts is the stock cluster's own business, and it offers it (verified in
+BMW's G-series iDrive 7 manuals and BimmerCode's official G05 list):
+
+- **The setting**: iDrive, CAR > Settings > Displays > **Driving mode view** off - the cluster then keeps its
+  standard view when the drive mode changes, so the sport readouts are never drawn (the widgets themselves are
+  also listed under CAR > Driving information > Sport displays). No coding, per driver profile, reversible.
+- **Coding** (BimmerCode, G05, "Headunit" HU_MGU): **Sport displays values** (`SPORT_DISPLAYS_LAYOUT`) - its
+  values include "Not active"; what box-free "custom cluster" installs typically switch off.
+- The gear bracket right of centre has no such switch: it blends into the pure black (and a stored pre-0.16
+  Boxes value of "standard" now counts as Auto, so updated cars get it handled; "Never" is the explicit opt-out).
+- The `cluster-render` service hides the stock CarPlay maneuver box by **holding its slot** with an empty scene
+  (0x105 / 0x103, verified on cars). Whether the gear bracket is slot-mapped the same way, the renderer's slot
+  report on **Signals page 2** says (photograph it in COMFORT and in SPORT INDIVIDUAL, or take the Logs file
+  from a USB stick): if it is, a small cluster-render patch (holds following the `panel` target) removes it for
+  real too.
 
 ### The welcome (Toro)
 

@@ -69,7 +69,9 @@ mgu.run({
             boxClear: settings.get('boxClear') === 'on',
             // the KOMBI's boxes in the middle (layouts.js): always there ('m'), never ('standard'), or with the
             // drive mode ('auto': layout_common.mCar reads boxesNow)
-            cluster: settings.get('cluster') === 'm' ? 'm' : settings.get('cluster') === 'standard' ? 'standard' : 'auto',
+            // 'never' is the explicit opt-out; a stored pre-0.16 'standard' (the old default) counts as Auto,
+            // so updated cars get the boxes handled without touching the setting
+            cluster: settings.get('cluster') === 'm' ? 'm' : settings.get('cluster') === 'never' ? 'standard' : 'auto',
             boxesNow: sportNow(),
             boxBezel: settings.get('boxBezel') === 'on',   // (off: the box sits on the plain background)
             alarmRpm: settings.get('revAlarm') === 'off' ? 0 : Number(settings.get('alarmRpm')) || 6000,   // the rev alarm (alarm.js)
