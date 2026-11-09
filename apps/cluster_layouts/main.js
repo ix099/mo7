@@ -69,9 +69,10 @@ mgu.run({
             boxClear: settings.get('boxClear') === 'on',
             // the KOMBI's boxes in the middle (layouts.js): always there ('m'), never ('standard'), or with the
             // drive mode ('auto': layout_common.mCar reads boxesNow)
-            // 'never' is the explicit opt-out; a stored pre-0.16 'standard' (the old default) counts as Auto,
-            // so updated cars get the boxes handled without touching the setting
-            cluster: settings.get('cluster') === 'm' ? 'm' : settings.get('cluster') === 'never' ? 'standard' : 'auto',
+            // 'never' is the explicit opt-out. The default is 'm' (Always): the owner's G05 xDrive40i draws its
+            // boxes in COMFORT and ECO PRO too, not only in SPORT, so Auto (SPORT only) hid them only there; a
+            // stored pre-0.16 'standard' (the old default) also counts as Always.
+            cluster: settings.get('cluster') === 'auto' ? 'auto' : settings.get('cluster') === 'never' ? 'standard' : 'm',
             boxesNow: sportNow(),
             boxBezel: settings.get('boxBezel') === 'on',   // (off: the box sits on the plain background)
             alarmRpm: settings.get('revAlarm') === 'off' ? 0 : Number(settings.get('alarmRpm')) || 6000,   // the rev alarm (alarm.js)

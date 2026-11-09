@@ -129,9 +129,11 @@ The KOMBI draws its own widgets **above** every app's panel: its gear bracket ri
 this G05 xDrive40i, not only on M cars - its two sport readouts in the middle **while the drive mode is SPORT /
 SPORT INDIVIDUAL** (photos of the car confirm all three). No app can draw over them; they can only be made to
 vanish into pure black, so Toro cuts its carbon weave round every box and lays exact black under it. With
-**Boxes: Auto** (the default) the layouts also move their readings out of the middle band exactly while a SPORT
-mode is on (the layout is redrawn when the mode changes, logged): the band becomes a framed black blade across
-the design, the hexagon moves left of it and the speed under it. 'Always' and 'Never' are manual overrides.
+**Boxes: Always** (the default - on the owner's car the boxes are up in COMFORT and ECO PRO too, not only in
+SPORT) the layouts keep their readings out of the middle band in every mode: the band is a framed black blade
+across the design, the hexagon left of it and the speed under it. 'Auto' moves out of the band only while a
+SPORT mode is on (cars that draw the readouts just then; the layout is redrawn when the mode changes, logged);
+'Never' is the opt-out. A stored pre-0.16 'standard' counts as Always.
 
 Truly removing the two sport readouts is the stock cluster's own business, and it offers it (verified in
 BMW's G-series iDrive 7 manuals and BimmerCode's official G05 list):

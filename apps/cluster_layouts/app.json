@@ -2,7 +2,7 @@
   "id": "cluster_layouts",
   "title": "Cluster Layouts",
   "description": "Your own layout on the whole instrument cluster (round dials, gear, temperatures), drawn by the cluster itself",
-  "version": "0.16.1",
+  "version": "0.16.2",
   "startType": "autostart",
   "vendor": "custom",
   "loggingId": "OA9L",
@@ -260,15 +260,15 @@
       "key": "cluster",
       "label": "Boxes in the middle of the cluster (the KOMBI draws them over every app)",
       "type": "choice",
-      "default": "auto",
+      "default": "m",
       "options": [
         [
-          "auto",
-          "Auto: moved out of the boxes while the drive mode is SPORT (the KOMBI shows them then)"
+          "m",
+          "Always: readings kept out of the KOMBI's boxes (this car draws them in every mode)"
         ],
         [
-          "m",
-          "Always (the KOMBI's sport readouts always up)"
+          "auto",
+          "Auto: only while the drive mode is SPORT (cars that draw them just then)"
         ],
         [
           "never",
