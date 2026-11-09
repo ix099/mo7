@@ -90,6 +90,17 @@ const M_HOLES = [{ x: 778, y: 274, w: 276, h: 122 }, { x: 1208, y: 313, w: 207, 
  * default) while a SPORT drive mode is on (main.js boxesNow: the KOMBI shows its sport readouts then, on a G05
  * xDrive40i as on an M car); never with 'standard'. */
 const mCar = (o) => !!o && (o.cluster === 'm' || (o.cluster !== 'standard' && !!o.boxesNow));
+/*
+ * The owner's car (a G05 xDrive40i): the two boxes its KOMBI draws over every app, measured with the
+ * calibration grid (layout_toro gridLayout) from his photo of 2026-11-09 - the same rectangles as M_BOXES,
+ * up in EVERY drive mode, with margins. The stock gear bracket did NOT show on that photo. Every cockpit
+ * layout lays pure black under these and keeps its readings out of them.
+ */
+const OWNER_BOXES = [
+    { x: 779, y: 275, w: 274, h: 120 },    /* over grid cell 1, into 4 */
+    { x: 1209, y: 314, w: 199, h: 106 },   /* small on the 2/3/5/6 corner */
+];
+
 /** The KOMBI's dark boxes a layout keeps its readings out of, for this car: the gear box, and an M car's two. */
 const holes = (o) => [GEARBOX_HOLE, EDRIVE_HOLE].concat(mCar(o) ? M_HOLES : []);
 /* the stock warning lights and the fallback gear letter along the bottom middle */
@@ -177,5 +188,5 @@ const flat = (key, x, y, w, h, colour) => ({ key, kind: 'flat', x, y, w, h, colo
 
 module.exports = {
     isNum, speedIn, speedUnit, tempIn, tempText, speedText, speedScale, rpmScale, tempFrac, gearText, selectorLit, clock, modeText, text, flat,
-    MAP, aroundMap, overMap, cut, NOTCH, GEARBOX_HOLE, boxBezel, EDRIVE_HOLE, M_BOXES, M_HOLES, mCar, holes, TELLTALES, inCorner, distText, erangeText, splitText, outsideText, socText, kwText, reading, readingUp, bar, engineFocus, focus, boostText, torqueText, timingText, boostFrac,
+    MAP, aroundMap, overMap, cut, NOTCH, GEARBOX_HOLE, boxBezel, EDRIVE_HOLE, M_BOXES, M_HOLES, OWNER_BOXES, mCar, holes, TELLTALES, inCorner, distText, erangeText, splitText, outsideText, socText, kwText, reading, readingUp, bar, engineFocus, focus, boostText, torqueText, timingText, boostFrac,
 };

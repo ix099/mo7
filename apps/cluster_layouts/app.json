@@ -2,7 +2,7 @@
   "id": "cluster_layouts",
   "title": "Cluster Layouts",
   "description": "Your own layout on the whole instrument cluster (round dials, gear, temperatures), drawn by the cluster itself",
-  "version": "0.19.0",
+  "version": "0.20.0",
   "startType": "autostart",
   "vendor": "custom",
   "loggingId": "OA9L",
@@ -213,6 +213,22 @@
         [
           "toro",
           "Toro (hexagon tach, supercar)"
+        ],
+        [
+          "classico",
+          "Classico (twin analog dials)"
+        ],
+        [
+          "zen",
+          "Zen (minimal digital)"
+        ],
+        [
+          "pods",
+          "Pods (glass cards)"
+        ],
+        [
+          "quartz",
+          "Quartz (retro digital)"
         ]
       ]
     },
@@ -423,7 +439,7 @@
     },
     {
       "key": "welcome",
-      "label": "Welcome when the cluster comes up (Toro)",
+      "label": "Welcome when the cluster comes up (the owner's layouts)",
       "type": "choice",
       "default": "on",
       "options": [
@@ -439,7 +455,7 @@
     },
     {
       "key": "motion",
-      "label": "Animations (Toro's glow and glints)",
+      "label": "Animations (glints and breathing glow)",
       "type": "choice",
       "default": "on",
       "options": [
@@ -455,7 +471,7 @@
     },
     {
       "key": "revAlarm",
-      "label": "Rev alarm: red light pulsing round the edges (Toro)",
+      "label": "Rev alarm: red light pulsing round the edges (the owner's layouts)",
       "type": "choice",
       "default": "on",
       "options": [

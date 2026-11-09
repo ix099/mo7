@@ -130,7 +130,34 @@ owner reports it.
 |---|---|---|---|
 | ![](../../docs/toro_boxes.png) | ![](../../docs/toro_eco.png) | ![](../../docs/toro_alarm.png) | ![](../../docs/toro_map.png) |
 
-### The welcome (Toro)
+### Four more cockpits (0.20.0): switch in Settings > Layout
+
+Four further original designs for the owner, each in its own language, each built round the same measured boxes
+(pure black under them, nothing of theirs on a reading), each one arrangement in every drive mode with the
+colours following it, each with the nameplate, the welcome and the rev alarm:
+
+- **Classico** - two deep analog dials with satin bezels and real needles (coolant set into the speedometer,
+  oil into the tach), a small E-F fuel needle dial between them, the gear with its slide at the top.
+- **Zen** - the quiet one: a vast thin-glow speed, the gear floating alone, one hairline for the revs and one
+  for the fuel, a single whisper-line of readings along the bottom.
+- **Pods** - floating glass cards: a header pod, the speed pod with the rev bar in its foot, the gear pod in
+  the gap between the boxes, the drive pod with fuel and coolant as twin arcs, the data pod on the right.
+- **Quartz** - a retro electronic dash in one phosphor colour per mode: LED ladders for the revs, fuel and
+  coolant, ruled fascia lines, the readings in blocky digits.
+
+| Classico | Zen |
+|---|---|
+| ![](../../docs/classico.png) | ![](../../docs/zen.png) |
+
+| Pods | Quartz |
+|---|---|
+| ![](../../docs/pods.png) | ![](../../docs/quartz.png) |
+
+| Classico in SPORT | Pods in ECO |
+|---|---|
+| ![](../../docs/classico_sport.png) | ![](../../docs/pods_eco.png) |
+
+### The welcome
 
 When the cluster comes up with the car standing (it waits until the KOMBI shows it, up to 2.5 s, so its own
 start-up animation is not played over; a settings change or the car found does not cut it): a black veil, the
@@ -142,7 +169,7 @@ in `intro.js`.
 
 ![The welcome](../../docs/welcome.png)
 
-### The rev alarm (Toro)
+### The rev alarm
 
 From Settings > Rev alarm from (6000 rpm by default) red light pulses round the cluster's edges like an alarm,
 until the engine speed is 150 rpm below it again (`alarm.js`, `ALARM_FS`). The cluster loops the pulse itself
